@@ -1,0 +1,21 @@
+name: sanketa_adapters
+description: >-
+  SANKETA brand control adapters. Each implements the sanketa_core
+  ControlAdapter contract and keeps every platform quirk inside its own unit, so
+  adding a brand touches zero core code (NFR-14). Roku (ECP) is the first; the
+  rest of the MVP set (Android TV, Tizen, webOS, BRAVIA) follows.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  async: ^2.11.0
+  crypto: ^3.0.0
+  http: ^1.2.0
+  sanketa_core:
+    path: ../sanketa_core
+
+dev_dependencies:
+  test: ^1.24.0

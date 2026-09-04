@@ -1,0 +1,19 @@
+name: sanketa_ir
+description: >-
+  SANKETA infrared subsystem. Pure-Dart IR encoders that compile a protocol +
+  parameters into a carrier frequency and a microsecond timing pattern ready for
+  Android's ConsumerIrManager, plus a codeset model and an IrControlAdapter that
+  puts IR behind the same ControlAdapter contract as the network brands. This is
+  the universal backstop — any TV / STB / AC ever made, fully offline (FR-2).
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  sanketa_core:
+    path: ../sanketa_core
+
+dev_dependencies:
+  test: ^1.24.0

@@ -1,0 +1,16 @@
+name: sanketa_core
+description: >-
+  SANKETA core domain — the platform-agnostic ControlAdapter contract and the
+  models it hangs off. Pure Dart, no Flutter, no external dependencies. Every
+  brand adapter (Android TV, Tizen, webOS, Roku, BRAVIA, IR, bridge) implements
+  the single interface defined here. See PRD §13.3 and CONTEXT.md §8.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+# Intentionally dependency-free: the core contract must compile and be testable
+# in isolation, with no network stack and no UI framework pulled in.
+dev_dependencies:
+  test: ^1.24.0

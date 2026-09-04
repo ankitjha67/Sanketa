@@ -1,0 +1,25 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+pubspec.lock
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets / local config (never commit pairing material or keys)
+*.local
+.env
+secrets/
+
+# Phase 0 spike output (device transcripts may contain LAN details)
+spike/captures/

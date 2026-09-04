@@ -1,0 +1,19 @@
+name: sanketa_discovery
+description: >-
+  SANKETA network discovery backends. Real socket implementations of the
+  sanketa_core DiscoveryBackend contract — SSDP/UPnP, mDNS/Bonjour, and targeted
+  TCP probing — that find controllable devices from any brand on the LAN
+  (PRD FR-1.1). Each method is a backend; adding one touches zero core code.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  multicast_dns: ^0.3.2
+  sanketa_core:
+    path: ../sanketa_core
+
+dev_dependencies:
+  test: ^1.24.0
