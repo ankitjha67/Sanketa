@@ -11,13 +11,13 @@ media to the screen.
 
 ## Status
 
-🟢 **Full control matrix + IR, all unit-tested.** Four pure-Dart packages,
-analyzing clean, **123 unit tests passing**: the contract, multi-method
-discovery, **all 5 MVP network adapters** (Roku, Android TV, Tizen, webOS,
-BRAVIA), **generic DLNA + DIAL**, and the full IR subsystem (encoders, Sony
-codeset, Coolix AC, D-pad assist typer). Every brand sits behind one contract.
-Nothing is hardware-validated yet — that is Phase 0. See [CONTEXT.md](CONTEXT.md)
-§6 (tracker) and §14 (coverage ladder).
+🟢 **Control matrix + IR + the app's UI shell.** Six packages, analyzing clean,
+**141 tests passing**: the contract, discovery, **all 5 MVP network adapters**
+(Roku, Android TV, Tizen, webOS, BRAVIA), **generic DLNA + DIAL**, the full IR
+subsystem (encoders, Sony codeset, Coolix AC, D-pad assist typer) — plus the
+**OmniBeam design tokens** and a **Flutter Remote screen** wired straight to the
+`ControlAdapter` contract. Nothing is hardware-validated yet — that is Phase 0.
+See [CONTEXT.md](CONTEXT.md) §6 (tracker) and §14 (coverage ladder).
 
 ## Repository layout
 
@@ -40,8 +40,21 @@ SANKETA/
 │  └─ lib/src/  ir_codec (NEC/SIRC/RC5/Samsung/raw) · ir_codeset · ir_control_adapter
 │               ac/ (Coolix AC full-state) · assist/ (D-pad shortest-path typing)
 │     └─ example/ir_compile.dart   compiles codeset keys → carrier + timing pattern
-└─ (planned) sanketa_app/  Flutter UI shell + native channels (IR emit, discovery) — Phase 0+
+├─ sanketa_design/       OmniBeam design tokens (pure Dart): colours · type · spacing · elevation
+├─ sanketa_app/          Flutter UI shell — the Remote screen, wired to ControlAdapter
+│  └─ lib/  theme/ · control/ (DemoAdapter + RemoteController) · widgets/ · screens/
+└─ design/               Stitch design source: DESIGN.md · code.html · screen.png
 ```
+
+## Running the app
+
+```bash
+cd sanketa_app && flutter run          # or: flutter run -d chrome
+```
+
+The Remote screen renders the OmniBeam design and drives a `DemoAdapter` through
+the `ControlAdapter` contract (every keypress logs a "sent to TV" line). Swap in
+a real adapter — Roku, Android TV, IR — and nothing above the contract changes.
 
 ## The coverage ladder ("any brand, old and new")
 

@@ -1,0 +1,27 @@
+name: sanketa_app
+description: "SANKETA — universal TV remote + casting (OmniBeam Living UI)."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  sanketa_core:
+    path: ../sanketa_core
+  sanketa_design:
+    path: ../sanketa_design
+  sanketa_adapters:
+    path: ../sanketa_adapters
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

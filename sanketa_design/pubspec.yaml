@@ -1,0 +1,14 @@
+name: sanketa_design
+description: >-
+  SANKETA "OmniBeam Living UI" design tokens — colours, typography, spacing,
+  radii, and elevation, transcribed from design/DESIGN.md + design/code.html.
+  Pure Dart (no Flutter) so the token values compile and are unit-tested here;
+  the Flutter app (sanketa_app) wraps them in ThemeData / Color / TextStyle.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+dev_dependencies:
+  test: ^1.24.0

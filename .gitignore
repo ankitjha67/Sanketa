@@ -23,3 +23,6 @@ secrets/
 
 # Phase 0 spike output (device transcripts may contain LAN details)
 spike/captures/
+
+# Design source (Stitch export) is tracked under design/; the zip is redundant
+stitch_universal_tv_remote_and_cast.zip
