@@ -31,7 +31,8 @@ class AtvPairingSession {
     required this.clientKey,
     required this.serverKey,
     this.serviceName = 'com.sanketa/remote',
-    this.clientName = 'SANKETA',
+    this.clientName = 'Sanketa',
+    this.ackTimeout = const Duration(seconds: 10),
   });
 
   final AtvChannel channel;
@@ -39,6 +40,7 @@ class AtvPairingSession {
   final AtvPublicKey serverKey;
   final String serviceName;
   final String clientName;
+  final Duration ackTimeout;
 
   /// Drive the handshake to completion, prompting for the on-screen code via
   /// [PairingContext.requestPin].
@@ -52,13 +54,13 @@ class AtvPairingSession {
     try {
       context.notify?.call('Starting pairing…');
       channel.sendMessage(buildPairingRequest(serviceName, clientName));
-      await acks.next;
+      await acks.next.timeout(ackTimeout);
 
       channel.sendMessage(buildPairingOption());
-      await acks.next;
+      await acks.next.timeout(ackTimeout);
 
       channel.sendMessage(buildPairingConfiguration());
-      await acks.next; // TV now displays the code
+      await acks.next.timeout(ackTimeout); // TV now displays the code
 
       context.notify?.call('Enter the code shown on your TV');
       final code = decodeHexCode(await requestPin());
@@ -70,9 +72,12 @@ class AtvPairingSession {
         serverExponent: serverKey.exponent,
         nonce: nonceFromCode(code),
       );
+      if (!pairingChecksumMatches(codeBytes: code, hash: hash)) {
+        return const PairingResult.failed('pairing code checksum mismatch');
+      }
 
       channel.sendMessage(buildPairingSecret(hash));
-      await acks.next; // secret accepted
+      await acks.next.timeout(ackTimeout); // secret accepted
 
       return const PairingResult.paired('android_tv:client-cert');
     } on Object catch (e) {

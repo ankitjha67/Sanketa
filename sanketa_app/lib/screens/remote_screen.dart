@@ -7,46 +7,59 @@ import '../widgets/common.dart';
 import '../widgets/connection_bar.dart';
 import '../widgets/remote_pad.dart';
 import '../widgets/tv_keyboard_sheet.dart';
+import 'settings_screen.dart';
 
+/// The primary remote-control surface. Lives inside [AppShell]'s IndexedStack
+/// at index 0. No longer owns a Scaffold or bottom nav — those belong to the
+/// shell.
 class RemoteScreen extends StatelessWidget {
   const RemoteScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final c = RemoteScope.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Column(children: [
-          _header(),
-          Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 448),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
-                  child: Column(
-                    children: const [
-                      ConnectionBar(),
-                      SizedBox(height: AppSpacing.md),
-                      TvKeyboardSheet(),
-                      SizedBox(height: AppSpacing.md),
-                      RemotePad(),
-                      SizedBox(height: AppSpacing.md),
-                      _SentReadout(),
-                    ],
-                  ),
-                ),
+    return Column(children: [
+      _header(context, c),
+      Expanded(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 448),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+              child: Column(
+                children: [
+                  const ConnectionBar(),
+                  if (c.connectionError != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    _ErrorBanner(
+                      message: c.connectionError!,
+                      onRetry: c.retryConnection,
+                    ),
+                  ],
+                  if (c.lastCommandError != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    _ErrorBanner(
+                      message: c.lastCommandError!,
+                      onDismiss: c.clearCommandError,
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  const TvKeyboardSheet(),
+                  const SizedBox(height: AppSpacing.md),
+                  const RemotePad(),
+                  const SizedBox(height: AppSpacing.md),
+                  const _SentReadout(),
+                ],
               ),
             ),
           ),
-        ]),
+        ),
       ),
-      bottomNavigationBar: _bottomNav(c),
-    );
+    ]);
   }
 
-  Widget _header() => Container(
+  Widget _header(BuildContext context, RemoteController c) => Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: hex(AppColors.surface),
@@ -64,7 +77,7 @@ class RemoteScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadii.md),
                   border: Border.all(color: hex(AppColors.outlineVariant).withValues(alpha: 0.3)),
                 ),
-                child: Icon(Icons.settings_remote, size: 20, color: hex(AppColors.primaryContainer)),
+                child: Image.asset('assets/images/sanketa_logo.png', width: 20, height: 20),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -72,26 +85,49 @@ class RemoteScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(children: [
-                      Text('SANKETA',
-                          style: gfont(AppType.headlineMd, color: hex(AppColors.onSurface), size: 16, weight: FontWeight.w600)),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: hex(AppColors.surfaceContainerHighest),
-                          borderRadius: BorderRadius.circular(AppRadii.sm),
+                    Wrap(
+                      spacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text('Sanketa',
+                            style: gfont(AppType.headlineMd, color: hex(AppColors.onSurface), size: 16, weight: FontWeight.w600)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: hex(AppColors.surfaceContainerHighest),
+                            borderRadius: BorderRadius.circular(AppRadii.sm),
+                          ),
+                          child: Text(c.transportBadge, style: gfont(AppType.labelMonoSm, color: hex(AppColors.onSurfaceVariant), size: 10)),
                         ),
-                        child: Text('Smart IR', style: gfont(AppType.labelMonoSm, color: hex(AppColors.onSurfaceVariant), size: 10)),
-                      ),
-                    ]),
-                    Text('Samsung Neo QLED 65"', style: gfont(AppType.bodySm, color: hex(AppColors.outline))),
+                      ],
+                    ),
+                    Text(c.deviceName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: gfont(AppType.bodySm, color: hex(AppColors.outline))),
                   ],
                 ),
               ),
-              _pill(Icons.keyboard, 'TV Keyboard'),
+              Flexible(flex: 0, child: _pill(Icons.keyboard, 'TV Keyboard')),
               const SizedBox(width: 4),
-              Icon(Icons.tune, size: 20, color: hex(AppColors.onSurfaceVariant)),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => RemoteScope(
+                      controller: c,
+                      child: const SettingsScreen(),
+                    ),
+                  ),
+                ),
+                child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Center(
+                    child: Icon(Icons.tune, size: 20, color: hex(AppColors.onSurfaceVariant)),
+                  ),
+                ),
+              ),
             ]),
           ),
         ),
@@ -110,40 +146,59 @@ class RemoteScreen extends StatelessWidget {
           Text(label, style: gfont(AppType.bodySm, color: hex(AppColors.primary), weight: FontWeight.w500)),
         ]),
       );
+}
 
-  Widget _bottomNav(RemoteController c) => Container(
-        decoration: BoxDecoration(
-          color: hex(AppColors.surfaceContainerLowest),
-          border: Border(top: BorderSide(color: hex(AppColors.outlineVariant))),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: SafeArea(
-          top: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 448),
-              child: Row(
-                children: [
-                  Expanded(child: _navItem(Icons.settings_remote, 'Remote', active: true)),
-                  Expanded(child: _navItem(Icons.search, 'Search')),
-                  Expanded(child: _navItem(Icons.cast, 'Cast')),
-                  Expanded(child: _navItem(Icons.devices, 'Devices')),
-                ],
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message, this.onRetry, this.onDismiss});
+
+  final String message;
+  final VoidCallback? onRetry;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: hex(AppColors.error).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: hex(AppColors.error).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded,
+              size: 18, color: hex(AppColors.error)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(message,
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.onSurface), size: 12)),
+          ),
+          if (onRetry != null)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onRetry,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Text('Retry',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.primaryContainer),
+                        weight: FontWeight.w600, size: 12)),
               ),
             ),
-          ),
-        ),
-      );
-
-  Widget _navItem(IconData icon, String label, {bool active = false}) {
-    final color = active ? hex(AppColors.primaryContainer) : hex(AppColors.onSurfaceVariant);
-    return SizedBox(
-      height: AppSpacing.touchTargetMin,
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon, size: 24, color: color),
-        const SizedBox(height: 2),
-        Text(label, style: gfont(AppType.labelMonoSm, color: color)),
-      ]),
+          if (onDismiss != null)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onDismiss,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.close,
+                    size: 16, color: hex(AppColors.onSurfaceVariant)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

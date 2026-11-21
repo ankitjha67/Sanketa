@@ -48,17 +48,13 @@ class DiscoveryEngine {
   /// aborts the others.
   Future<ScanResult> scan({
     Duration timeout = const Duration(seconds: 6),
+    bool clearPrevious = true,
   }) async {
-    var failed = 0;
-    await Future.wait(backends.map((b) async {
-      try {
-        await for (final endpoint in b.search(timeout)) {
-          registry.ingest(endpoint);
-        }
-      } on Object {
-        failed++;
-      }
-    }));
+    if (clearPrevious) registry.clear();
+    final outcomes = await Future.wait(
+      backends.map((backend) => _runBackend(backend, timeout)),
+    );
+    final failed = outcomes.where((didFail) => didFail).length;
 
     final found = registry.devices;
     var apIsolation = false;
@@ -77,5 +73,29 @@ class DiscoveryEngine {
       backendsRun: backends.length,
       backendsFailed: failed,
     );
+  }
+
+  Future<bool> _runBackend(
+    DiscoveryBackend backend,
+    Duration timeout,
+  ) async {
+    final iterator = StreamIterator(backend.search(timeout));
+    final stopwatch = Stopwatch()..start();
+    try {
+      while (true) {
+        final remaining = timeout - stopwatch.elapsed;
+        if (remaining <= Duration.zero) throw TimeoutException('scan timeout');
+        final hasNext = await iterator.moveNext().timeout(remaining);
+        if (!hasNext) return false;
+        registry.ingest(iterator.current);
+      }
+    } on Object {
+      return true;
+    } finally {
+      // Some async generators cannot finish cancellation until their current
+      // I/O wait completes. Do not let that extend the public scan deadline;
+      // cancellation still prevents any late endpoint from being ingested.
+      unawaited(iterator.cancel());
+    }
   }
 }

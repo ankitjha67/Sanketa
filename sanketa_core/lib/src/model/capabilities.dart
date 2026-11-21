@@ -71,6 +71,7 @@ class CapabilityMap {
     this.appLaunch = false,
     this.inputList = false,
     this.stateReadback = false,
+    this.canCast = false,
   });
 
   /// Keys the target actually accepts. The remote UI renders only these.
@@ -93,6 +94,10 @@ class CapabilityMap {
 
   /// Any state readback stream is available (`readState()` emits).
   final bool stateReadback;
+
+  /// Local media casting supported (FR-7.1). True when the adapter implements
+  /// [MediaCaster] — photos, videos, audio can be pushed to this renderer.
+  final bool canCast;
 
   bool supports(Key key) => keys.contains(key);
 

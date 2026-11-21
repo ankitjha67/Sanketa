@@ -18,6 +18,7 @@ class IrCodeset {
     required this.deviceType,
     required this.keys,
     this.name,
+    this.brandName,
   });
 
   /// Stable pack-scoped id, e.g. `sony_tv_sirc_default`.
@@ -25,6 +26,7 @@ class IrCodeset {
   final BrandFamily brand;
   final DeviceType deviceType;
   final String? name;
+  final String? brandName;
 
   /// The remote, as a map from canonical key to stored IR command.
   final Map<Key, IrCommand> keys;

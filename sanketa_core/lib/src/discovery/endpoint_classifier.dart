@@ -48,7 +48,13 @@ class EndpointClassifier {
       (e.friendlyName ?? '').toLowerCase(),
     ].join(' ');
 
-    // --- mDNS service types (most specific) ---------------------------------
+    // --- Brand fingerprints first — a device's real brand takes precedence
+    // over generic protocol classifications (e.g. a Sony BRAVIA advertising
+    // AirPlay is still a BRAVIA, not an Apple TV). --------------------------
+    final brandMatch = _matchBrand(hay);
+    if (brandMatch != null) return brandMatch;
+
+    // --- mDNS service types (generic protocol) -----------------------------
     if (st.contains('androidtvremote')) {
       return const Classification(
         brand: BrandFamily.androidTv,
@@ -57,8 +63,6 @@ class EndpointClassifier {
       );
     }
     if (st.contains('_googlecast')) {
-      // Casting surface; often the same box as an Android TV remote endpoint,
-      // which the registry merges into one device.
       return const Classification(
         brand: BrandFamily.androidTv,
         adapterId: 'cast',
@@ -69,65 +73,7 @@ class EndpointClassifier {
       return const Classification(
         brand: BrandFamily.appleTv,
         badges: {_cast},
-        confident: false, // control path is P2 research
-      );
-    }
-
-    // --- Brand fingerprints (SSDP SERVER / ST / friendly name) --------------
-    if (st.contains('roku') || server.contains('roku')) {
-      return const Classification(
-        brand: BrandFamily.roku,
-        adapterId: 'roku',
-        badges: {_control, _keyboard, _cast},
-      );
-    }
-    if (hay.contains('samsung') || hay.contains('tizen')) {
-      return const Classification(
-        brand: BrandFamily.tizen,
-        adapterId: 'tizen',
-        badges: {_control, _keyboard, _cast},
-      );
-    }
-    if (hay.contains('webos') || hay.contains('lg electronics')) {
-      return const Classification(
-        brand: BrandFamily.webOs,
-        adapterId: 'webos',
-        badges: {_control, _keyboard, _cast},
-      );
-    }
-    if (hay.contains('bravia') || hay.contains('sony')) {
-      return const Classification(
-        brand: BrandFamily.bravia,
-        adapterId: 'bravia',
-        badges: {_control, _keyboard, _cast},
-      );
-    }
-    if (hay.contains('vizio')) {
-      return const Classification(
-        brand: BrandFamily.vizio,
-        adapterId: 'vizio',
-        badges: {_control, _cast},
-      );
-    }
-    if (hay.contains('viera') || hay.contains('panasonic')) {
-      return const Classification(
-        brand: BrandFamily.panasonic,
-        adapterId: 'panasonic',
-        badges: {_control},
-      );
-    }
-    if (hay.contains('philips')) {
-      return const Classification(
-        brand: BrandFamily.philips,
-        adapterId: 'philips',
-        badges: {_control},
-      );
-    }
-    if (hay.contains('vidaa') || hay.contains('hisense')) {
-      return const Classification(
-        brand: BrandFamily.hisense,
-        adapterId: 'hisense',
-        badges: {_control},
+        confident: false,
       );
     }
 
@@ -156,5 +102,106 @@ class EndpointClassifier {
       badges: {},
       confident: false,
     );
+  }
+
+  Classification? _matchBrand(String hay) {
+    if (hay.contains('roku')) {
+      return const Classification(
+        brand: BrandFamily.roku,
+        adapterId: 'roku',
+        badges: {_control, _keyboard, _cast},
+      );
+    }
+    if (hay.contains('samsung') || hay.contains('tizen')) {
+      return const Classification(
+        brand: BrandFamily.tizen,
+        adapterId: 'tizen',
+        badges: {_control, _keyboard, _cast},
+      );
+    }
+    if (hay.contains('webos') || hay.contains('lg electronics')) {
+      return const Classification(
+        brand: BrandFamily.webOs,
+        adapterId: 'webos',
+        badges: {_control, _keyboard, _cast},
+      );
+    }
+    if (hay.contains('bravia') || hay.contains('sony')) {
+      return const Classification(
+        brand: BrandFamily.bravia,
+        adapterId: 'bravia',
+        badges: {_control, _keyboard, _cast},
+      );
+    }
+    if ((hay.contains('fire') && hay.contains('tv')) ||
+        hay.contains('amzn-wplay') || hay.contains('aftm') ||
+        hay.contains('amazon fire')) {
+      return const Classification(
+        brand: BrandFamily.fireTv,
+        adapterId: 'fire_tv',
+        badges: {_control, _keyboard, _cast},
+      );
+    }
+    if (hay.contains('vizio') || hay.contains('smartcast')) {
+      return const Classification(
+        brand: BrandFamily.vizio,
+        adapterId: 'vizio',
+        badges: {_control, _cast},
+      );
+    }
+    if (hay.contains('viera') || hay.contains('panasonic')) {
+      return const Classification(
+        brand: BrandFamily.panasonic,
+        adapterId: 'panasonic',
+        badges: {_control},
+      );
+    }
+    if (hay.contains('philips')) {
+      return const Classification(
+        brand: BrandFamily.philips,
+        adapterId: 'philips',
+        badges: {_control},
+      );
+    }
+    if (hay.contains('vidaa') || hay.contains('hisense')) {
+      return const Classification(
+        brand: BrandFamily.hisense,
+        adapterId: 'hisense',
+        badges: {_control},
+      );
+    }
+    if (hay.contains('haier')) {
+      return const Classification(
+        brand: BrandFamily.other,
+        adapterId: 'android_tv',
+        badges: {_control, _keyboard, _cast},
+        confident: false,
+      );
+    }
+    if (hay.contains('tcl')) {
+      return const Classification(
+        brand: BrandFamily.tcl,
+        adapterId: 'android_tv',
+        badges: {_control, _keyboard, _cast},
+        confident: false,
+      );
+    }
+    if (hay.contains('xiaomi') || hay.contains('mi tv') ||
+        hay.contains('mi box') || hay.contains('mitv')) {
+      return const Classification(
+        brand: BrandFamily.androidTv,
+        adapterId: 'android_tv',
+        badges: {_control, _keyboard, _cast},
+      );
+    }
+    if (hay.contains('mediatek') || hay.contains('mtk')) {
+      return const Classification(
+        brand: BrandFamily.androidTv,
+        adapterId: 'android_tv',
+        badges: {_control, _keyboard, _cast},
+        confident: false,
+      );
+    }
+    return null;
   }
 }

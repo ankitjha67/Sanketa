@@ -1,0 +1,1 @@
+{"id":"flipper_tvs_sweex_sweex_generic_monitor_fd8d96b4","brand":"genericIr","deviceType":"tv","name":"SWEEX Generic Monitor","source":"flipperIrdb","keyCount":2,"brandName":"Sweex","keys":{"power":{"p":"nec","a":1,"c":16},"mute":{"p":"nec","a":1,"c":17}}}

@@ -75,7 +75,7 @@ class BraviaAdapter implements ControlAdapter {
   CapabilityMap capabilities() => CapabilityMap(
         keys: _ircc.keys.toSet(),
         textMode: TextInjectionMode.live, // setTextForm
-        wake: true, // WoL
+        wake: false, // WoL not yet implemented
         appLaunch: false,
         inputList: false,
         volumeReadback: false,
@@ -100,7 +100,26 @@ class BraviaAdapter implements ControlAdapter {
   }
 
   @override
-  Future<void> connect() async {}
+  Future<void> connect() async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$_base/sony/system'),
+        headers: {'X-Auth-PSK': _psk, 'Content-Type': 'application/json'},
+        body:
+            '{"method":"getSystemInformation","version":"1.0","id":1,"params":[]}',
+      );
+      if (res.statusCode == 403) {
+        throw StateError('auth_failed');
+      }
+      if (res.statusCode != 200) {
+        throw StateError('http_${res.statusCode}');
+      }
+    } on StateError {
+      rethrow;
+    } on Object {
+      throw StateError('unreachable');
+    }
+  }
 
   @override
   Future<void> disconnect() async {}
@@ -111,8 +130,7 @@ class BraviaAdapter implements ControlAdapter {
       final res = await _client.post(
         Uri.parse('$_base/sony/system'),
         headers: {'X-Auth-PSK': _psk, 'Content-Type': 'application/json'},
-        body:
-            '{"method":"getPowerStatus","version":"1.0","id":1,"params":[]}',
+        body: '{"method":"getPowerStatus","version":"1.0","id":1,"params":[]}',
       );
       return res.statusCode == 200;
     } on Object {
@@ -121,7 +139,8 @@ class BraviaAdapter implements ControlAdapter {
   }
 
   @override
-  Future<CommandResult> sendKey(Key key, {PressType press = PressType.tap}) async {
+  Future<CommandResult> sendKey(Key key,
+      {PressType press = PressType.tap}) async {
     final code = _ircc[key];
     if (code == null) {
       return CommandResult.failure('key not in BRAVIA IRCC set: ${key.name}');
@@ -154,7 +173,8 @@ class BraviaAdapter implements ControlAdapter {
   Future<CommandResult> sendText(TextOp op) async {
     if (op.kind != TextOpKind.insert) {
       if (op.kind == TextOpKind.submit) return sendKey(Key.ok);
-      return const CommandResult.failure('only insert/submit supported on BRAVIA text');
+      return const CommandResult.failure(
+          'only insert/submit supported on BRAVIA text');
     }
     final body = '{"method":"setTextForm","version":"1.0","id":1,"params":'
         '[{"text":${_jsonString(op.text ?? '')}}]}';
@@ -174,7 +194,7 @@ class BraviaAdapter implements ControlAdapter {
 
   @override
   Future<CommandResult> launchApp(AppRef app) async =>
-      const CommandResult.failure('app launch not implemented for BRAVIA yet');
+      const CommandResult.failure('This BRAVIA does not support launching apps from Sanketa');
 
   @override
   Future<CommandResult> setInput(InputRef input) => sendKey(Key.input);

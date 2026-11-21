@@ -36,15 +36,19 @@ class RemotePad extends StatelessWidget {
         children: [
           _roundButton(
             icon: Icons.power_settings_new,
-            color: hex(AppColors.error),
-            borderColor: hex(AppColors.error).withValues(alpha: 0.4),
-            onTap: () => c.key(core.Key.power),
+            color: c.isPoweredOn ? hex(AppColors.signalEmerald) : hex(AppColors.error),
+            borderColor: c.isPoweredOn
+                ? hex(AppColors.signalEmerald).withValues(alpha: 0.4)
+                : hex(AppColors.error).withValues(alpha: 0.4),
+            onTap: () => c.power(!c.isPoweredOn),
           ),
-          _sourceToggle(c),
+          if (c.caps.inputList) _sourceToggle(c),
           _roundButton(
-            icon: Icons.volume_off,
-            color: hex(AppColors.onSurfaceVariant),
-            borderColor: hex(AppColors.outlineVariant).withValues(alpha: 0.3),
+            icon: c.isMuted ? Icons.volume_off : Icons.volume_up,
+            color: c.isMuted ? hex(AppColors.error) : hex(AppColors.onSurfaceVariant),
+            borderColor: c.isMuted
+                ? hex(AppColors.error).withValues(alpha: 0.4)
+                : hex(AppColors.outlineVariant).withValues(alpha: 0.3),
             onTap: () => c.key(core.Key.mute),
           ),
         ],
@@ -168,7 +172,7 @@ class RemotePad extends StatelessWidget {
         children: [
           _funcButton(Icons.arrow_back, 'Back', () => c.key(core.Key.back)),
           const SizedBox(width: AppSpacing.sm),
-          _funcButton(Icons.dialpad, '123', () {}),
+          _funcButton(Icons.dialpad, '123', c.toggleNumbers),
           const SizedBox(width: AppSpacing.sm),
           _funcButton(Icons.home, 'Home', () => c.key(core.Key.home)),
         ],
@@ -191,11 +195,14 @@ class RemotePad extends StatelessWidget {
         ),
       );
 
-  Widget _rockers(RemoteController c) => Row(children: [
-        Expanded(child: _rocker('VOL', () => c.key(core.Key.volumeUp), () => c.key(core.Key.volumeDown))),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(child: _rocker('CH', () => c.key(core.Key.channelUp), () => c.key(core.Key.channelDown))),
-      ]);
+  Widget _rockers(RemoteController c) {
+    final volLabel = c.tvVolume >= 0 ? 'VOL ${c.tvVolume}' : 'VOL';
+    return Row(children: [
+      Expanded(child: _rocker(volLabel, () => c.key(core.Key.volumeUp), () => c.key(core.Key.volumeDown))),
+      const SizedBox(width: AppSpacing.md),
+      Expanded(child: _rocker('CH', () => c.key(core.Key.channelUp), () => c.key(core.Key.channelDown))),
+    ]);
+  }
 
   Widget _rocker(String label, VoidCallback onUp, VoidCallback onDown) {
     Widget half(IconData icon, VoidCallback onTap, {required bool top}) => GestureDetector(
@@ -245,6 +252,7 @@ class RemotePad extends StatelessWidget {
           ),
         );
 
+    if (!c.caps.appLaunch) return const SizedBox.shrink();
     return Row(children: [
       app('NETFLIX', AppColors.netflix),
       const SizedBox(width: AppSpacing.xs),

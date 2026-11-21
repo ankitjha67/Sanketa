@@ -1,0 +1,1 @@
+{"id":"flipper_streaming_devices_amazon_firetv_stick_4k_max_e881aee2","brand":"fireTv","deviceType":"streamingStick","name":"FireTV Stick 4K Max","source":"flipperIrdb","keyCount":3,"brandName":"Amazon","keys":{"power":{"p":"nec","a":3,"c":29},"mute":{"p":"necExtended","a":32512,"c":45390},"volumeUp":{"p":"nec","a":3,"c":17}}}

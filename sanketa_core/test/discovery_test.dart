@@ -28,22 +28,26 @@ void main() {
       final r = c.classify(_ep(st: 'roku:ecp', server: 'Roku/9.4'));
       expect(r.brand, BrandFamily.roku);
       expect(r.adapterId, 'roku');
-      expect(r.badges, containsAll(<CapabilityBadge>[
-        CapabilityBadge.control,
-        CapabilityBadge.keyboard,
-        CapabilityBadge.cast,
-      ]));
+      expect(
+          r.badges,
+          containsAll(<CapabilityBadge>[
+            CapabilityBadge.control,
+            CapabilityBadge.keyboard,
+            CapabilityBadge.cast,
+          ]));
     });
 
     test('Android TV remote mDNS → android_tv, keyboard-capable', () {
-      final r = c.classify(_ep(source: DiscoverySource.mdns, st: '_androidtvremote2._tcp'));
+      final r = c.classify(
+          _ep(source: DiscoverySource.mdns, st: '_androidtvremote2._tcp'));
       expect(r.brand, BrandFamily.androidTv);
       expect(r.adapterId, 'android_tv');
       expect(r.badges, contains(CapabilityBadge.keyboard));
     });
 
     test('Google Cast mDNS → cast badge only', () {
-      final r = c.classify(_ep(source: DiscoverySource.mdns, st: '_googlecast._tcp'));
+      final r =
+          c.classify(_ep(source: DiscoverySource.mdns, st: '_googlecast._tcp'));
       expect(r.badges, equals({CapabilityBadge.cast}));
     });
 
@@ -58,14 +62,16 @@ void main() {
     });
 
     test('generic MediaRenderer → dlna, cast-only, render type', () {
-      final r = c.classify(_ep(st: 'urn:schemas-upnp-org:device:MediaRenderer:1'));
+      final r =
+          c.classify(_ep(st: 'urn:schemas-upnp-org:device:MediaRenderer:1'));
       expect(r.brand, BrandFamily.dlna);
       expect(r.adapterId, 'dlna');
       expect(r.deviceType, DeviceType.mediaRenderer);
     });
 
     test('unknown service → other, not confident', () {
-      final r = c.classify(_ep(st: 'urn:schemas-upnp-org:device:InternetGatewayDevice:1'));
+      final r = c.classify(
+          _ep(st: 'urn:schemas-upnp-org:device:InternetGatewayDevice:1'));
       expect(r.brand, BrandFamily.other);
       expect(r.confident, isFalse);
     });
@@ -76,17 +82,25 @@ void main() {
       final reg = DeviceRegistry();
       // SSDP sees Cast (cast badge) on host X; mDNS sees the Android TV remote
       // (control+keyboard) on the same host X.
-      reg.ingest(_ep(host: '192.168.1.77', st: '_googlecast._tcp', source: DiscoverySource.mdns));
-      reg.ingest(_ep(host: '192.168.1.77', st: '_androidtvremote2._tcp', source: DiscoverySource.mdns));
+      reg.ingest(_ep(
+          host: '192.168.1.77',
+          st: '_googlecast._tcp',
+          source: DiscoverySource.mdns));
+      reg.ingest(_ep(
+          host: '192.168.1.77',
+          st: '_androidtvremote2._tcp',
+          source: DiscoverySource.mdns));
 
       expect(reg.devices, hasLength(1));
       final d = reg.devices.single;
       expect(d.device.host, '192.168.1.77');
-      expect(d.badges, containsAll(<CapabilityBadge>[
-        CapabilityBadge.cast,
-        CapabilityBadge.control,
-        CapabilityBadge.keyboard,
-      ]));
+      expect(
+          d.badges,
+          containsAll(<CapabilityBadge>[
+            CapabilityBadge.cast,
+            CapabilityBadge.control,
+            CapabilityBadge.keyboard,
+          ]));
       expect(d.sources, contains(DiscoverySource.mdns));
       expect(d.adapterId, 'android_tv'); // richer brand wins over cast-only
     });
@@ -94,7 +108,9 @@ void main() {
     test('a confident brand is not overwritten by a later generic hit', () {
       final reg = DeviceRegistry();
       reg.ingest(_ep(host: '10.0.0.5', st: 'roku:ecp', server: 'Roku/9'));
-      reg.ingest(_ep(host: '10.0.0.5', st: 'urn:schemas-upnp-org:device:InternetGatewayDevice:1'));
+      reg.ingest(_ep(
+          host: '10.0.0.5',
+          st: 'urn:schemas-upnp-org:device:InternetGatewayDevice:1'));
       expect(reg.devices.single.device.brand, BrandFamily.roku);
     });
 
@@ -109,12 +125,17 @@ void main() {
   group('DiscoveryEngine', () {
     test('merges hits from multiple backends', () async {
       final engine = DiscoveryEngine(backends: [
-        _FakeBackend(DiscoverySource.ssdp, [_ep(host: '192.168.1.10', st: 'roku:ecp')]),
+        _FakeBackend(
+            DiscoverySource.ssdp, [_ep(host: '192.168.1.10', st: 'roku:ecp')]),
         _FakeBackend(DiscoverySource.mdns, [
-          _ep(host: '192.168.1.20', st: '_androidtvremote2._tcp', source: DiscoverySource.mdns),
+          _ep(
+              host: '192.168.1.20',
+              st: '_androidtvremote2._tcp',
+              source: DiscoverySource.mdns),
         ]),
       ]);
-      final result = await engine.scan(timeout: const Duration(milliseconds: 50));
+      final result =
+          await engine.scan(timeout: const Duration(milliseconds: 50));
       expect(result.devices, hasLength(2));
       expect(result.backendsRun, 2);
       expect(result.backendsFailed, 0);
@@ -124,9 +145,11 @@ void main() {
     test('one backend throwing does not abort the scan', () async {
       final engine = DiscoveryEngine(backends: [
         _ThrowingBackend(),
-        _FakeBackend(DiscoverySource.ssdp, [_ep(host: '192.168.1.10', st: 'roku:ecp')]),
+        _FakeBackend(
+            DiscoverySource.ssdp, [_ep(host: '192.168.1.10', st: 'roku:ecp')]),
       ]);
-      final result = await engine.scan(timeout: const Duration(milliseconds: 50));
+      final result =
+          await engine.scan(timeout: const Duration(milliseconds: 50));
       expect(result.devices, hasLength(1));
       expect(result.backendsFailed, 1);
     });
@@ -136,9 +159,36 @@ void main() {
         backends: [_FakeBackend(DiscoverySource.ssdp, const [])],
         gatewayReachable: () async => true,
       );
-      final result = await engine.scan(timeout: const Duration(milliseconds: 50));
+      final result =
+          await engine.scan(timeout: const Duration(milliseconds: 50));
       expect(result.devices, isEmpty);
       expect(result.apIsolationSuspected, isTrue);
+    });
+
+    test('enforces the overall timeout and cancels a slow backend', () async {
+      final engine = DiscoveryEngine(backends: [_SlowBackend()]);
+      final stopwatch = Stopwatch()..start();
+
+      final result = await engine.scan(
+        timeout: const Duration(milliseconds: 30),
+      );
+
+      expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 200)));
+      expect(result.devices, isEmpty);
+      expect(result.backendsFailed, 1);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(engine.registry.devices, isEmpty);
+    });
+
+    test('a new scan clears devices that are no longer present', () async {
+      final backend = _MutableBackend([
+        _ep(host: '192.168.1.10', st: 'roku:ecp'),
+      ]);
+      final engine = DiscoveryEngine(backends: [backend]);
+      expect((await engine.scan()).devices, hasLength(1));
+
+      backend.items = [];
+      expect((await engine.scan()).devices, isEmpty);
     });
   });
 }
@@ -152,7 +202,8 @@ class _FakeBackend implements DiscoveryBackend {
   DiscoverySource get source => _source;
 
   @override
-  Stream<DiscoveredEndpoint> search(Duration timeout) => Stream.fromIterable(_items);
+  Stream<DiscoveredEndpoint> search(Duration timeout) =>
+      Stream.fromIterable(_items);
 }
 
 class _ThrowingBackend implements DiscoveryBackend {
@@ -162,4 +213,28 @@ class _ThrowingBackend implements DiscoveryBackend {
   @override
   Stream<DiscoveredEndpoint> search(Duration timeout) =>
       Stream.error(StateError('no multicast route'));
+}
+
+class _SlowBackend implements DiscoveryBackend {
+  @override
+  DiscoverySource get source => DiscoverySource.probe;
+
+  @override
+  Stream<DiscoveredEndpoint> search(Duration timeout) async* {
+    await Future<void>.delayed(const Duration(seconds: 1));
+    yield _ep(host: '192.168.1.99');
+  }
+}
+
+class _MutableBackend implements DiscoveryBackend {
+  _MutableBackend(this.items);
+
+  List<DiscoveredEndpoint> items;
+
+  @override
+  DiscoverySource get source => DiscoverySource.ssdp;
+
+  @override
+  Stream<DiscoveredEndpoint> search(Duration timeout) =>
+      Stream.fromIterable(items);
 }

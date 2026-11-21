@@ -33,13 +33,18 @@ class ProbeBackend implements DiscoveryBackend {
 
   @override
   Stream<DiscoveredEndpoint> search(Duration timeout) async* {
+    final stopwatch = Stopwatch()..start();
     for (final candidate in candidates) {
+      final remaining = timeout - stopwatch.elapsed;
+      if (remaining <= Duration.zero) return;
+      final attemptTimeout =
+          remaining < connectTimeout ? remaining : connectTimeout;
       Socket? socket;
       try {
         socket = await Socket.connect(
           candidate.host,
           candidate.port,
-          timeout: connectTimeout,
+          timeout: attemptTimeout,
         );
         yield DiscoveredEndpoint(
           source: DiscoverySource.probe,

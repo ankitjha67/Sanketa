@@ -38,7 +38,10 @@ class DeviceRegistry {
     // Keep the most specific brand: never let a later generic hit (other/dlna)
     // overwrite a confident brand we already have.
     final brand = _pickBrand(prior?.device.brand, c.brand);
-    final adapterId = c.confident ? (c.adapterId ?? prior?.adapterId) : prior?.adapterId ?? c.adapterId;
+    final adapterId = _pickAdapter(
+      prior?.adapterId, prior?.badges,
+      c.adapterId, c.badges, c.confident,
+    );
 
     final device = Device(
       id: key,
@@ -46,12 +49,18 @@ class DeviceRegistry {
       type: c.deviceType,
       transport: Transport.network,
       friendlyName: endpoint.friendlyName ?? prior?.device.friendlyName,
-      model: prior?.device.model,
+      model: endpoint.attributes['model'] ?? prior?.device.model,
       host: endpoint.host,
       port: endpoint.port ?? prior?.device.port,
       roomId: prior?.device.roomId,
       capabilities: prior?.device.capabilities,
     );
+
+    final metadata = <String, String>{...?prior?.metadata};
+    if (endpoint.location != null) {
+      metadata['location'] = endpoint.location!;
+    }
+    metadata.addAll(endpoint.attributes);
 
     _byKey[key] = DiscoveredDevice(
       device: device,
@@ -59,6 +68,7 @@ class DeviceRegistry {
       sources: sources,
       adapterId: adapterId,
       confident: (prior?.confident ?? false) || c.confident,
+      metadata: metadata,
     );
     _changes.add(devices);
   }
@@ -69,6 +79,23 @@ class DeviceRegistry {
   }
 
   Future<void> dispose() => _changes.close();
+
+  /// A control-capable adapter must never be downgraded by a cast-only hit
+  /// (e.g. a MediaTek Android TV discovered as both android_tv and DLNA
+  /// MediaRenderer — the DLNA endpoint must not overwrite android_tv).
+  String? _pickAdapter(
+    String? prior, Set<CapabilityBadge>? priorBadges,
+    String? incoming, Set<CapabilityBadge> incomingBadges,
+    bool incomingConfident,
+  ) {
+    final priorHasControl =
+        priorBadges?.contains(CapabilityBadge.control) ?? false;
+    final incomingHasControl =
+        incomingBadges.contains(CapabilityBadge.control);
+    if (priorHasControl && !incomingHasControl) return prior;
+    if (incomingConfident) return incoming ?? prior;
+    return prior ?? incoming;
+  }
 
   BrandFamily _pickBrand(BrandFamily? prior, BrandFamily incoming) {
     if (prior == null || prior == BrandFamily.other) return incoming;

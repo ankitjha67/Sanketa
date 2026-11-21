@@ -14,6 +14,17 @@ class IrCodec {
   const IrCodec();
 
   IrSignal encode(IrCommand cmd) {
+    if (cmd.carrierHzOverride != null && cmd.carrierHzOverride! <= 0) {
+      throw ArgumentError.value(
+          cmd.carrierHzOverride, 'carrierHzOverride', 'must be positive');
+    }
+    if (cmd.protocol == IrProtocol.raw) {
+      final raw = cmd.raw;
+      if (raw == null || raw.isEmpty || raw.any((duration) => duration <= 0)) {
+        throw ArgumentError.value(
+            raw, 'raw', 'must contain positive pulse durations');
+      }
+    }
     if (cmd.carrierHzOverride != null && cmd.protocol != IrProtocol.raw) {
       // Honour a carrier override by recompiling then swapping the carrier.
       final base = _encode(cmd);
@@ -28,11 +39,15 @@ class IrCodec {
 
   IrSignal _encode(IrCommand cmd) => switch (cmd.protocol) {
         IrProtocol.nec => _nec(cmd.address, cmd.command),
-        IrProtocol.necExtended => _nec(cmd.address, cmd.command, extended: true),
+        IrProtocol.necExtended =>
+          _nec(cmd.address, cmd.command, extended: true),
         IrProtocol.samsung => _samsung(cmd.address, cmd.command),
-        IrProtocol.sonySirc12 => _sirc(cmd.address, cmd.command, addressBits: 5),
-        IrProtocol.sonySirc15 => _sirc(cmd.address, cmd.command, addressBits: 8),
-        IrProtocol.sonySirc20 => _sirc(cmd.address, cmd.command, addressBits: 13),
+        IrProtocol.sonySirc12 =>
+          _sirc(cmd.address, cmd.command, addressBits: 5),
+        IrProtocol.sonySirc15 =>
+          _sirc(cmd.address, cmd.command, addressBits: 8),
+        IrProtocol.sonySirc20 =>
+          _sirc(cmd.address, cmd.command, addressBits: 13),
         IrProtocol.rc5 => _rc5(cmd.address, cmd.command, toggle: cmd.toggle),
         IrProtocol.raw => IrSignal(
             carrierHz: cmd.carrierHzOverride ?? 38000,
@@ -90,7 +105,7 @@ IrSignal _samsung(int address, int command) {
   return IrSignal(
     carrierHz: 38000,
     pattern: pattern,
-    repeat: const [4500, 4500, bitMark], // resend header-led frame while held
+    repeat: List<int>.unmodifiable(pattern),
   );
 }
 

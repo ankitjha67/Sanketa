@@ -7,6 +7,7 @@
 /// TLS socket + exact token lifecycle are Phase 0.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
@@ -54,6 +55,12 @@ class TizenAdapter implements ControlAdapter {
   TizenAdapter({required WsChannel channel}) : _ch = channel;
 
   final WsChannel _ch;
+  String _imeText = '';
+  String? _token;
+
+  /// The Samsung token from the last `ms.channel.connect` event. The
+  /// controller persists this and appends it to the wss URL on reconnect.
+  String? get token => _token;
 
   @override
   String get id => 'tizen';
@@ -74,7 +81,7 @@ class TizenAdapter implements ControlAdapter {
   CapabilityMap capabilities() => CapabilityMap(
         keys: _tizenKeys.keys.toSet(),
         textMode: TextInjectionMode.live, // SendInputString
-        wake: true, // WoWLAN (native)
+        wake: false, // WoWLAN not yet implemented
         appLaunch: false,
         inputList: false,
         volumeReadback: false,
@@ -104,7 +111,37 @@ class TizenAdapter implements ControlAdapter {
   }
 
   @override
-  Future<void> connect() => _ch.connect();
+  Future<void> connect() async {
+    _imeText = '';
+    await _ch.connect();
+    // Wait for the TV's authorization event. Samsung shows an "Allow" prompt
+    // on first connect; subsequent connects with a valid token skip it.
+    final raw = await _ch.messages.where((msg) {
+      try {
+        final data = jsonDecode(msg);
+        return data is Map &&
+            (data['event'] == 'ms.channel.connect' ||
+                data['event'] == 'ms.channel.unauthorized' ||
+                data['event'] == 'ms.channel.timeOut');
+      } on Object {
+        return false;
+      }
+    }).first.timeout(const Duration(seconds: 20),
+        onTimeout: () =>
+            throw TimeoutException('TV did not authorize — press Allow on the TV'));
+    final event = jsonDecode(raw);
+    final eventName = event['event'];
+    if (eventName == 'ms.channel.unauthorized') {
+      throw StateError('TV denied remote access');
+    }
+    if (eventName == 'ms.channel.timeOut') {
+      throw StateError(
+          'TV authorization timed out — press Allow on your TV');
+    }
+    // Token may be a string or number depending on TV model/year.
+    final t = (event['data'] as Map?)?['token'];
+    if (t != null) _token = t.toString();
+  }
 
   @override
   Future<void> disconnect() => _ch.close();
@@ -131,19 +168,22 @@ class TizenAdapter implements ControlAdapter {
   Future<CommandResult> sendText(TextOp op) {
     switch (op.kind) {
       case TextOpKind.insert:
-        return _send(_textFrame(op.text ?? ''));
+        _imeText += op.text ?? '';
+        return _send(_textFrame(_imeText));
       case TextOpKind.submit:
-        return sendKey(Key.ok);
+        return _send(_inputEndFrame());
       case TextOpKind.delete:
+        _imeText = _imeText.isEmpty ? '' : _imeText.substring(0, _imeText.length - 1);
+        return _send(_textFrame(_imeText));
       case TextOpKind.clear:
-        return Future.value(const CommandResult.failure(
-            'field delete/clear not exposed by the Tizen remote API'));
+        _imeText = '';
+        return _send(_textFrame(_imeText));
     }
   }
 
   @override
   Future<CommandResult> launchApp(AppRef app) async =>
-      const CommandResult.failure('app launch not implemented for tizen yet');
+      const CommandResult.failure('This TV does not support launching apps from Sanketa');
 
   @override
   Future<CommandResult> setInput(InputRef input) => sendKey(Key.input);
@@ -172,6 +212,11 @@ class TizenAdapter implements ControlAdapter {
           'DataOfCmd': 'base64',
           'TypeOfRemote': 'SendInputString',
         },
+      });
+
+  String _inputEndFrame() => jsonEncode({
+        'method': 'ms.remote.control',
+        'params': {'TypeOfRemote': 'SendInputEnd'},
       });
 
   Future<CommandResult> _send(String frame) async {

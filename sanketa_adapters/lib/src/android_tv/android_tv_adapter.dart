@@ -9,16 +9,25 @@
 /// batch-edit text. Pairing is the separate [AtvPairingSession].
 library;
 
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:sanketa_core/sanketa_core.dart';
 
+import '../dial/dial_client.dart' show appDeepLink;
 import 'atv_channel.dart';
 import 'atv_keymap.dart';
 import 'atv_messages.dart';
+import 'protobuf_codec.dart';
 
 class AndroidTvAdapter implements ControlAdapter {
   AndroidTvAdapter({required AtvChannel channel}) : _channel = channel;
 
   final AtvChannel _channel;
+  StreamSubscription<Uint8List>? _messageSub;
+  String _imeText = '';
+  int _imeCounter = 1;
+  int _fieldCounter = 1;
 
   @override
   String get id => 'android_tv';
@@ -36,15 +45,40 @@ class AndroidTvAdapter implements ControlAdapter {
       );
 
   @override
-  CapabilityMap capabilities() => CapabilityMap(
+  CapabilityMap capabilities() {
+    final f = _channel.negotiatedFeatures;
+    if (f == 0) {
+      // Not yet connected — return the full static set so the UI doesn't
+      // flash empty capabilities before the handshake completes.
+      return CapabilityMap(
         keys: androidKeyCodes.keys.toSet(),
-        textMode: TextInjectionMode.live, // the hero feature (FR-4.1)
-        wake: true, // WoL/WoWLAN
-        volumeReadback: false, // state parsing is Phase 0+
+        textMode: TextInjectionMode.live,
+        wake: false,
+        volumeReadback: false,
         appLaunch: true,
         inputList: false,
         stateReadback: false,
       );
+    }
+    // Build capability map from what the TV actually reported.
+    final keys = <Key>{};
+    if (f & AtvrsFeatures.key != 0) keys.addAll(androidKeyCodes.keys);
+    if (f & AtvrsFeatures.volume != 0) {
+      keys.addAll(const [Key.volumeUp, Key.volumeDown, Key.mute]);
+    }
+    if (f & AtvrsFeatures.power != 0) keys.add(Key.power);
+    return CapabilityMap(
+      keys: keys,
+      textMode: (f & AtvrsFeatures.ime != 0)
+          ? TextInjectionMode.live
+          : TextInjectionMode.none,
+      wake: false,
+      volumeReadback: false,
+      appLaunch: (f & AtvrsFeatures.appLink != 0),
+      inputList: false,
+      stateReadback: false,
+    );
+  }
 
   @override
   Future<PairingResult> pair(PairingContext context) async {
@@ -61,49 +95,84 @@ class AndroidTvAdapter implements ControlAdapter {
   }
 
   @override
-  Future<void> connect() => _channel.connect();
+  Future<void> connect() async {
+    await _channel.connect();
+    _subscribeToMessages();
+  }
 
   @override
-  Future<void> disconnect() => _channel.close();
+  Future<void> disconnect() async {
+    await _messageSub?.cancel();
+    _messageSub = null;
+    await _channel.close();
+  }
 
   @override
   Future<bool> heartbeat() async {
     if (!_channel.isOpen) return false;
-    _channel.sendMessage(buildPingResponse(1)); // real impl round-trips a ping
-    return true;
+    try {
+      _channel.sendMessage(buildPingResponse(1));
+      return true;
+    } on Object {
+      return false;
+    }
   }
 
   @override
   Future<CommandResult> sendKey(Key key, {PressType press = PressType.tap}) {
     final keyCode = androidKeyCodes[key];
     if (keyCode == null) {
-      return Future.value(
-          CommandResult.failure('key not supported on android_tv: ${key.name}'));
+      return Future.value(CommandResult.failure(
+          'key not supported on android_tv: ${key.name}'));
     }
     return _send(buildKeyInject(keyCode, atvDirectionFor(press)));
   }
 
   @override
-  Future<CommandResult> sendText(TextOp op) {
+  Future<CommandResult> sendText(TextOp op) async {
     switch (op.kind) {
       case TextOpKind.insert:
-        return _send(buildImeText(op.text ?? ''));
+        _imeText += op.text ?? '';
+        return _send(buildImeText(_imeText,
+            imeCounter: _imeCounter, fieldCounter: _fieldCounter));
       case TextOpKind.submit:
-        return _send(buildKeyInject(androidKeyCodes[Key.enter]!, AtvDirection.short));
+        if (_imeText.isNotEmpty) {
+          // Commit the composition: send the text as the `committed` string
+          // field (not composing) so the TV finalizes the IME input. Without
+          // this, KEYCODE_ENTER is consumed by the on-screen keyboard.
+          await _send(buildImeCommit(_imeText,
+              imeCounter: _imeCounter, fieldCounter: _fieldCounter));
+        }
+        _imeText = '';
+        return _send(
+            buildKeyInject(androidKeyCodes[Key.enter]!, AtvDirection.short));
       case TextOpKind.delete:
-        return _repeatKey(androidKeyCodes[Key.backspace]!, op.count);
+        if (_imeText.isEmpty) {
+          return _repeatKey(androidKeyCodes[Key.backspace]!, op.count);
+        }
+        _imeText = _imeText.substring(0,
+            (_imeText.length - op.count).clamp(0, _imeText.length));
+        return _send(buildImeText(_imeText,
+            imeCounter: _imeCounter, fieldCounter: _fieldCounter,
+            start: _imeText.length, end: _imeText.length));
       case TextOpKind.clear:
-        return Future.value(const CommandResult.failure(
-            'clear over android_tv needs IME batch-edit (Phase 0)'));
+        final oldLength = _imeText.length;
+        _imeText = '';
+        return _send(buildImeText('', imeCounter: _imeCounter,
+            fieldCounter: _fieldCounter, start: 0, end: oldLength));
     }
   }
 
   @override
-  Future<CommandResult> launchApp(AppRef app) => _send(buildAppLink(app.id));
+  Future<CommandResult> launchApp(AppRef app) {
+    final uri = appDeepLink(app.name ?? app.id) ?? app.id;
+    return _send(buildAppLink(uri));
+  }
 
   @override
   Future<CommandResult> setInput(InputRef input) async =>
-      const CommandResult.failure('input switching not yet supported on android_tv');
+      const CommandResult.failure(
+          'input switching not yet supported on android_tv');
 
   @override
   Future<CommandResult> power({required bool on}) => sendKey(Key.power);
@@ -111,9 +180,86 @@ class AndroidTvAdapter implements ControlAdapter {
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
 
+  void _subscribeToMessages() {
+    _messageSub?.cancel();
+    _messageSub = _channel.messages.listen((msg) {
+      try {
+        final r = ProtoReader(msg);
+        if (!r.hasMore) return;
+        final tag = r.readTag();
+        if (tag.number == RemoteField.imeKeyInject &&
+            tag.wireType == WireType.lengthDelimited) {
+          _parseImeKeyInject(r.readLengthDelimited());
+        } else if (tag.number == RemoteField.imeShowRequest &&
+            tag.wireType == WireType.lengthDelimited) {
+          _parseImeShowRequest(r.readLengthDelimited());
+        }
+      } on Object {
+        // Best-effort parse — malformed frames are ignored.
+      }
+    });
+  }
+
+  void _parseImeKeyInject(Uint8List data) {
+    final r = ProtoReader(data);
+    final oldField = _fieldCounter;
+    while (r.hasMore) {
+      final tag = r.readTag();
+      if (tag.number == 1 && tag.wireType == WireType.lengthDelimited) {
+        final appInfo = ProtoReader(r.readLengthDelimited());
+        while (appInfo.hasMore) {
+          final at = appInfo.readTag();
+          if (at.number == 1 && at.wireType == WireType.varint) {
+            _imeCounter = appInfo.readVarint();
+          } else {
+            appInfo.skip(at.wireType);
+          }
+        }
+      } else if (tag.number == 2 && tag.wireType == WireType.lengthDelimited) {
+        final tfs = ProtoReader(r.readLengthDelimited());
+        while (tfs.hasMore) {
+          final tt = tfs.readTag();
+          if (tt.number == 1 && tt.wireType == WireType.varint) {
+            _fieldCounter = tfs.readVarint();
+          } else {
+            tfs.skip(tt.wireType);
+          }
+        }
+      } else {
+        r.skip(tag.wireType);
+      }
+    }
+    if (_fieldCounter != oldField) _imeText = '';
+  }
+
+  void _parseImeShowRequest(Uint8List data) {
+    final r = ProtoReader(data);
+    final oldField = _fieldCounter;
+    while (r.hasMore) {
+      final tag = r.readTag();
+      if (tag.number == 2 && tag.wireType == WireType.lengthDelimited) {
+        final tfs = ProtoReader(r.readLengthDelimited());
+        while (tfs.hasMore) {
+          final tt = tfs.readTag();
+          if (tt.number == 1 && tt.wireType == WireType.varint) {
+            _fieldCounter = tfs.readVarint();
+          } else {
+            tfs.skip(tt.wireType);
+          }
+        }
+      } else {
+        r.skip(tag.wireType);
+      }
+    }
+    if (_fieldCounter != oldField) _imeText = '';
+  }
+
   Future<CommandResult> _send(List<int> body) async {
     if (!_channel.isOpen) {
       return const CommandResult.failure('android_tv channel not connected');
+    }
+    if (_channel.gotError) {
+      return const CommandResult.failure('not_paired');
     }
     final sw = Stopwatch()..start();
     try {

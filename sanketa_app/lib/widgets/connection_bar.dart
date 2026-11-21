@@ -5,28 +5,39 @@ import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import 'common.dart';
 
-/// The device connection + fast-mode bar at the top of the remote.
 class ConnectionBar extends StatelessWidget {
   const ConnectionBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     final c = RemoteScope.of(context);
+    final connected = c.isConnected;
+    final statusColor =
+        connected ? hex(AppColors.signalEmerald) : hex(AppColors.error);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: panel(fill: AppColors.surfaceContainerLow, radius: AppRadii.md),
       child: Row(children: [
-        const PulseDot(),
+        PulseDot(color: statusColor),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Connected to Living Room TV',
-                  style: gfont(AppType.bodySm, color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-              Text('IP + Ultra-Fast IR Blaster Dual Link',
-                  style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline))),
+              Text(
+                  connected
+                      ? 'Connected to ${c.deviceName}'
+                      : 'Not connected',
+                  style: gfont(AppType.bodySm,
+                      color: hex(AppColors.onSurface),
+                      weight: FontWeight.w600)),
+              Text(
+                  connected
+                      ? 'Via ${c.transportLabel}'
+                      : 'Go to Devices to connect',
+                  style: gfont(AppType.labelMonoSm,
+                      color: hex(AppColors.outline))),
             ],
           ),
         ),
@@ -35,12 +46,18 @@ class ConnectionBar extends StatelessWidget {
           onTap: c.submit,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: panel(fill: AppColors.surfaceContainerHigh, radius: AppRadii.base, borderOpacity: 0.4),
+            decoration: panel(
+                fill: AppColors.surfaceContainerHigh,
+                radius: AppRadii.base,
+                borderOpacity: 0.4),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.search, size: 16, color: hex(AppColors.primaryContainer)),
+              Icon(Icons.search,
+                  size: 16, color: hex(AppColors.primaryContainer)),
               const SizedBox(width: 6),
               Text('Search on TV',
-                  style: gfont(AppType.bodySm, color: hex(AppColors.primary), weight: FontWeight.w500)),
+                  style: gfont(AppType.bodySm,
+                      color: hex(AppColors.primary),
+                      weight: FontWeight.w500)),
             ]),
           ),
         ),

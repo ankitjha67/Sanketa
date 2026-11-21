@@ -28,7 +28,9 @@ class ProtoWriter {
   final BytesBuilder _b = BytesBuilder();
 
   void _varint(int value) {
-    assert(value >= 0, 'only unsigned varints are supported');
+    if (value < 0) {
+      throw ArgumentError.value(value, 'value', 'must be unsigned');
+    }
     var v = value;
     while (true) {
       final byte = v & 0x7f;
@@ -42,7 +44,12 @@ class ProtoWriter {
     }
   }
 
-  void _tag(int field, int wire) => _varint((field << 3) | wire);
+  void _tag(int field, int wire) {
+    if (field <= 0) {
+      throw ArgumentError.value(field, 'field', 'must be positive');
+    }
+    _varint((field << 3) | wire);
+  }
 
   /// A varint field (int/uint/enum/bool).
   void writeUint(int field, int value) {
@@ -101,7 +108,9 @@ class ProtoReader {
 
   ProtoField readTag() {
     final t = _varint();
-    return ProtoField(t >> 3, t & 0x7);
+    final field = t >> 3;
+    if (field == 0) throw const FormatException('invalid field number 0');
+    return ProtoField(field, t & 0x7);
   }
 
   int readVarint() => _varint();
@@ -125,13 +134,22 @@ class ProtoReader {
         _varint();
       case WireType.lengthDelimited:
         final len = _varint();
+        _require(len);
         _pos += len;
       case WireType.fixed64:
+        _require(8);
         _pos += 8;
       case WireType.fixed32:
+        _require(4);
         _pos += 4;
       default:
         throw FormatException('unknown wire type $wireType');
+    }
+  }
+
+  void _require(int count) {
+    if (count < 0 || _pos + count > _bytes.length) {
+      throw const FormatException('truncated protobuf field');
     }
   }
 }

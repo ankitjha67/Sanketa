@@ -34,7 +34,8 @@ void main() {
 
   tearDown(() => server.close(force: true));
 
-  test('capabilities: media transport + volume, NO d-pad, NO text (FR-3.5)', () {
+  test('capabilities: media transport + volume, NO d-pad, NO text (FR-3.5)',
+      () {
     final caps = adapter.capabilities();
     expect(caps.textMode, TextInjectionMode.none);
     expect(caps.supports(Key.play), isTrue);

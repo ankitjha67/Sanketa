@@ -1,0 +1,1 @@
+{"id":"flipper_streaming_devices_amazon_alexa_voice_2ndgen_76a642c9","brand":"fireTv","deviceType":"streamingStick","name":"Alexa Voice 2ndGen","source":"flipperIrdb","keyCount":4,"brandName":"Amazon","keys":{"power":{"p":"rc5","a":0,"c":12},"volumeUp":{"p":"rc5","a":0,"c":16},"volumeDown":{"p":"rc5","a":0,"c":17},"mute":{"p":"rc5","a":0,"c":13}}}

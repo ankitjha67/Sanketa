@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:sanketa_adapters/sanketa_adapters.dart';
+import 'package:sanketa_adapters/src/android_tv/atv_pairing.dart';
 import 'package:sanketa_adapters/src/android_tv/protobuf_codec.dart';
 import 'package:sanketa_core/sanketa_core.dart';
 import 'package:test/test.dart';
@@ -10,15 +11,22 @@ import 'package:test/test.dart';
 /// With [autoAck] it emits an ack after every send, which drives the pairing
 /// session's request→ack sequence.
 class FakeAtvChannel implements AtvChannel {
-  FakeAtvChannel({this.autoAck = false});
+  FakeAtvChannel({this.autoAck = false, this.fakeFeatures = 0});
 
   final bool autoAck;
+  final int fakeFeatures;
   bool _open = false;
   final List<Uint8List> sent = [];
   final StreamController<Uint8List> _incoming = StreamController<Uint8List>();
 
   @override
   bool get isOpen => _open;
+
+  @override
+  bool get gotError => false;
+
+  @override
+  int get negotiatedFeatures => fakeFeatures;
 
   @override
   Future<void> connect() async => _open = true;
@@ -63,13 +71,14 @@ void main() {
 
     tearDown(() => channel.close());
 
-    test('capabilities: network transport, LIVE text (the hero), app launch', () {
+    test('capabilities: network transport, LIVE text (the hero), app launch',
+        () {
       final caps = adapter.capabilities();
       expect(adapter.transport, Transport.network);
       expect(caps.textMode, TextInjectionMode.live);
       expect(caps.canType, isTrue);
       expect(caps.appLaunch, isTrue);
-      expect(caps.wake, isTrue);
+      expect(caps.wake, isFalse);
       expect(caps.supports(Key.ok), isTrue);
       expect(caps.supports(Key.star), isFalse); // Roku-only key
     });
@@ -120,16 +129,41 @@ void main() {
       expect(inner.readVarint(), 66);
     });
 
-    test('text insert sends an IME message carrying the string', () async {
+    test('text insert sends an IME batch edit on field 21', () async {
       await adapter.sendText(const TextOp.insert('hi'));
       final msg = _outer(channel.sent.single);
-      expect(msg.field, 20); // ime_key_inject
-      final inner = ProtoReader(msg.body);
-      inner.readTag();
-      expect(inner.readString(), 'hi');
+      expect(msg.field, 21); // ime_batch_edit
+      // Walk: batchEdit → edit_info(3) → text_field_status(2) → value(3)
+      final batch = ProtoReader(msg.body);
+      String? text;
+      while (batch.hasMore) {
+        final bt = batch.readTag();
+        if (bt.number == 3) {
+          final editInfo = ProtoReader(batch.readLengthDelimited());
+          while (editInfo.hasMore) {
+            final et = editInfo.readTag();
+            if (et.number == 2) {
+              final imeObj = ProtoReader(editInfo.readLengthDelimited());
+              while (imeObj.hasMore) {
+                final ot = imeObj.readTag();
+                if (ot.number == 3) {
+                  text = imeObj.readString();
+                } else {
+                  imeObj.skip(ot.wireType);
+                }
+              }
+            } else {
+              editInfo.skip(et.wireType);
+            }
+          }
+        } else {
+          batch.skip(bt.wireType);
+        }
+      }
+      expect(text, 'hi');
     });
 
-    test('delete issues N backspace key injects', () async {
+    test('delete from empty buffer sends KEYCODE_DEL key injects', () async {
       await adapter.sendText(const TextOp.delete(3));
       expect(channel.sent, hasLength(3));
       for (final m in channel.sent) {
@@ -139,8 +173,18 @@ void main() {
       }
     });
 
+    test('delete with text sends truncated IME batch edit', () async {
+      await adapter.sendText(const TextOp.insert('hello'));
+      channel.sent.clear();
+      await adapter.sendText(const TextOp.delete(2));
+      expect(channel.sent, hasLength(1));
+      final outer = _outer(channel.sent.single);
+      expect(outer.field, 21); // RemoteImeBatchEdit
+    });
+
     test('launchApp sends an app-link message with the id', () async {
-      await adapter.launchApp(const AppRef(id: 'https://youtube', name: 'YouTube'));
+      await adapter
+          .launchApp(const AppRef(id: 'https://youtube', name: 'YouTube'));
       final msg = _outer(channel.sent.single);
       expect(msg.field, 90);
       expect(ProtoReader(msg.body)..readTag(), isNotNull);
@@ -176,15 +220,70 @@ void main() {
         clientKey: const AtvPublicKey(modulus: [1, 2, 3], exponent: [1, 0, 1]),
         serverKey: const AtvPublicKey(modulus: [9, 8, 7], exponent: [1, 0, 1]),
       );
+      final hash = computePairingHash(
+        clientModulus: const [1, 2, 3],
+        clientExponent: const [1, 0, 1],
+        serverModulus: const [9, 8, 7],
+        serverExponent: const [1, 0, 1],
+        nonce: const [0x5B, 0x6C],
+      );
+      final pin = '${hash[0].toRadixString(16).padLeft(2, '0')}5B6C';
 
       final result = await session.run(
-        PairingContext(requestPin: () async => '4A5B6C'),
+        PairingContext(requestPin: () async => pin),
       );
 
       expect(result.isPaired, isTrue);
       expect(result.credential, 'android_tv:client-cert');
       // request, option, configuration, secret = 4 messages sent.
       expect(channel.sent, hasLength(4));
+      await channel.close();
+    });
+
+    test('rejects a code with the wrong checksum before sending a secret',
+        () async {
+      final channel = FakeAtvChannel(autoAck: true);
+      await channel.connect();
+      final session = AtvPairingSession(
+        channel: channel,
+        clientKey: const AtvPublicKey(modulus: [1], exponent: [1]),
+        serverKey: const AtvPublicKey(modulus: [2], exponent: [1]),
+      );
+
+      final hash = computePairingHash(
+        clientModulus: const [1],
+        clientExponent: const [1],
+        serverModulus: const [2],
+        serverExponent: const [1],
+        nonce: const [0, 0],
+      );
+      final wrongChecksum = (hash[0] ^ 0xff).toRadixString(16).padLeft(2, '0');
+      final result = await session.run(
+        PairingContext(requestPin: () async => '${wrongChecksum}0000'),
+      );
+
+      expect(result.isPaired, isFalse);
+      expect(result.error, contains('checksum'));
+      expect(channel.sent, hasLength(3));
+      await channel.close();
+    });
+
+    test('times out when the TV does not acknowledge pairing', () async {
+      final channel = FakeAtvChannel();
+      await channel.connect();
+      final session = AtvPairingSession(
+        channel: channel,
+        clientKey: const AtvPublicKey(modulus: [1], exponent: [1]),
+        serverKey: const AtvPublicKey(modulus: [2], exponent: [1]),
+        ackTimeout: const Duration(milliseconds: 10),
+      );
+
+      final result = await session.run(
+        PairingContext(requestPin: () async => '000000'),
+      );
+
+      expect(result.isPaired, isFalse);
+      expect(result.error, contains('TimeoutException'));
       await channel.close();
     });
 

@@ -78,6 +78,13 @@ enum Key {
   backspace,
   enter,
 
+  // AC / climate (raw-IR per-button, not full-state AcEncoder)
+  acMode,
+  acSwing,
+  acTemperatureUp,
+  acTemperatureDown,
+  acFanSpeed,
+
   // Platform-idiomatic (surfaced only where the adapter declares support)
   star, // Roku *
   instantReplay, // Roku replay

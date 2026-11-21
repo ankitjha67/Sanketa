@@ -16,30 +16,43 @@ import 'dart:io';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'package:sanketa_core/sanketa_core.dart';
 
-/// Binds the mDNS socket in a way that works on every platform. Windows rejects
-/// `reusePort`, so force it off there; Android/iOS (the real targets) keep the
-/// default. Without this, the package's default factory throws on Windows dev
-/// machines (`reusePort not supported for Windows`).
+/// Binds the mDNS socket with a fallback for platforms that reject `reusePort`
+/// (Windows, some Android builds). On Android and Windows, `reusePort` is
+/// skipped upfront to avoid noisy runtime stderr messages in logcat / debug
+/// console. On other platforms, tries with `reusePort` first; on failure
+/// retries without it.
 Future<RawDatagramSocket> _crossPlatformBind(
   dynamic host,
   int port, {
   bool reuseAddress = true,
   bool reusePort = true,
   int ttl = 255,
-}) =>
-    RawDatagramSocket.bind(
+}) async {
+  final useReusePort = reusePort && !Platform.isAndroid && !Platform.isWindows;
+  try {
+    return await RawDatagramSocket.bind(
       host,
       port,
       reuseAddress: reuseAddress,
-      reusePort: Platform.isWindows ? false : reusePort,
+      reusePort: useReusePort,
       ttl: ttl,
     );
+  } on SocketException {
+    return RawDatagramSocket.bind(
+      host,
+      port,
+      reuseAddress: reuseAddress,
+      reusePort: false,
+      ttl: ttl,
+    );
+  }
+}
 
 class MdnsBackend implements DiscoveryBackend {
   MdnsBackend({List<String>? serviceTypes, MDnsClient? client})
       : serviceTypes = serviceTypes ?? _defaultServices,
-        _client = client ??
-            MDnsClient(rawDatagramSocketFactory: _crossPlatformBind);
+        _client =
+            client ?? MDnsClient(rawDatagramSocketFactory: _crossPlatformBind);
 
   static const List<String> _defaultServices = [
     '_androidtvremote2._tcp',
@@ -55,6 +68,7 @@ class MdnsBackend implements DiscoveryBackend {
 
   @override
   Stream<DiscoveredEndpoint> search(Duration timeout) async* {
+    final stopwatch = Stopwatch()..start();
     try {
       await _client.start();
     } on Object {
@@ -68,17 +82,31 @@ class MdnsBackend implements DiscoveryBackend {
     }
     try {
       for (final rawType in serviceTypes) {
+        var remaining = timeout - stopwatch.elapsed;
+        if (remaining <= Duration.zero) return;
         final type = rawType.endsWith('.local') ? rawType : '$rawType.local';
         final ptrStream = _client
             .lookup<PtrResourceRecord>(ResourceRecordQuery.serverPointer(type))
-            .timeout(timeout, onTimeout: (sink) => sink.close());
+            .timeout(remaining, onTimeout: (sink) => sink.close());
 
         await for (final ptr in ptrStream) {
-          await for (final srv in _client.lookup<SrvResourceRecord>(
-              ResourceRecordQuery.service(ptr.domainName))) {
+          remaining = timeout - stopwatch.elapsed;
+          if (remaining <= Duration.zero) return;
+          final serviceStream = _client
+              .lookup<SrvResourceRecord>(
+                ResourceRecordQuery.service(ptr.domainName),
+              )
+              .timeout(remaining, onTimeout: (sink) => sink.close());
+          await for (final srv in serviceStream) {
             String? ip;
-            await for (final addr in _client.lookup<IPAddressResourceRecord>(
-                ResourceRecordQuery.addressIPv4(srv.target))) {
+            remaining = timeout - stopwatch.elapsed;
+            if (remaining <= Duration.zero) return;
+            final addressStream = _client
+                .lookup<IPAddressResourceRecord>(
+                  ResourceRecordQuery.addressIPv4(srv.target),
+                )
+                .timeout(remaining, onTimeout: (sink) => sink.close());
+            await for (final addr in addressStream) {
               ip = addr.address.address;
               break;
             }

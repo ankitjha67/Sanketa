@@ -33,6 +33,9 @@ void _writeVarint(BytesBuilder b, int value) {
 
 /// Accumulates TCP bytes and yields complete message bodies as they arrive.
 class MessageDeframer {
+  MessageDeframer({this.maxFrameSize = 1024 * 1024});
+
+  final int maxFrameSize;
   final List<int> _buf = [];
 
   void addChunk(List<int> chunk) => _buf.addAll(chunk);
@@ -44,6 +47,10 @@ class MessageDeframer {
       final header = _tryReadVarint(_buf);
       if (header == null) break; // length prefix not fully arrived
       final (length, headerLen) = header;
+      if (length > maxFrameSize) {
+        _buf.clear();
+        throw FormatException('frame exceeds $maxFrameSize bytes');
+      }
       if (_buf.length < headerLen + length) break; // body not fully arrived
       out.add(Uint8List.fromList(_buf.sublist(headerLen, headerLen + length)));
       _buf.removeRange(0, headerLen + length);

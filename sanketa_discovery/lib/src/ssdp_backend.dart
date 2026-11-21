@@ -4,6 +4,10 @@
 /// into a [DiscoveredEndpoint]. Covers Roku (roku:ecp), DIAL, DLNA MediaRenderer,
 /// and any UPnP device that answers `ssdp:all` (Samsung/LG/Sony/Vizio/Panasonic
 /// all advertise here). Pure `dart:io`; no external dependency.
+///
+/// When a response carries a LOCATION URL, the backend fetches the UPnP device
+/// description XML to extract `<friendlyName>` and `<modelName>` so the UI shows
+/// human-readable device names instead of raw IP addresses.
 library;
 
 import 'dart:async';
@@ -40,6 +44,7 @@ class SsdpBackend implements DiscoveryBackend {
 
     final controller = StreamController<DiscoveredEndpoint>();
     final seen = <String>{};
+    final _upnpCache = <String, _UpnpInfo?>{};
 
     final sub = socket.listen((event) {
       if (event != RawSocketEvent.read) return;
@@ -64,7 +69,38 @@ class SsdpBackend implements DiscoveryBackend {
     });
 
     try {
-      yield* controller.stream;
+      await for (final e in controller.stream) {
+        if (e.friendlyName != null || e.location == null) {
+          yield e;
+          continue;
+        }
+        // Fetch UPnP description once per host for the friendly name.
+        if (!_upnpCache.containsKey(e.host)) {
+          _upnpCache[e.host] = await _fetchUpnpInfo(e.location!);
+        }
+        final info = _upnpCache[e.host];
+        if (info != null) {
+          yield DiscoveredEndpoint(
+            source: e.source,
+            host: e.host,
+            port: e.port,
+            usn: e.usn,
+            searchTarget: e.searchTarget,
+            location: e.location,
+            server: e.server,
+            friendlyName: info.friendlyName,
+            attributes: {
+              ...e.attributes,
+              if (info.modelName != null) 'model': info.modelName!,
+              if (info.manufacturer != null) 'manufacturer': info.manufacturer!,
+              if (info.applicationUrl != null)
+                'application-url': info.applicationUrl!,
+            },
+          );
+        } else {
+          yield e;
+        }
+      }
     } finally {
       timer.cancel();
       await sub.cancel();
@@ -118,4 +154,55 @@ DiscoveredEndpoint? parseSsdpResponse(String raw, String host) {
     server: headers['server'],
     attributes: headers,
   );
+}
+
+class _UpnpInfo {
+  _UpnpInfo({
+    this.friendlyName,
+    this.modelName,
+    this.manufacturer,
+    this.applicationUrl,
+  });
+  final String? friendlyName;
+  final String? modelName;
+  final String? manufacturer;
+  final String? applicationUrl;
+}
+
+Future<_UpnpInfo?> _fetchUpnpInfo(String locationUrl) async {
+  final client = HttpClient();
+  client.connectionTimeout = const Duration(seconds: 2);
+  try {
+    final req = await client.getUrl(Uri.parse(locationUrl));
+    final resp = await req.close().timeout(const Duration(seconds: 2));
+    if (resp.statusCode != 200) return null;
+    final appUrl = resp.headers.value('Application-URL');
+    final body = await resp.transform(utf8.decoder).join();
+    final name = _xmlField(body, 'friendlyName');
+    final model = _xmlField(body, 'modelName');
+    final mfr = _xmlField(body, 'manufacturer');
+    if (name == null && model == null && appUrl == null) return null;
+    return _UpnpInfo(
+      friendlyName: name,
+      modelName: model,
+      manufacturer: mfr,
+      applicationUrl: appUrl,
+    );
+  } on Object {
+    return null;
+  } finally {
+    client.close(force: true);
+  }
+}
+
+String? _xmlField(String xml, String tag) {
+  final open = '<$tag>';
+  final close = '</$tag>';
+  final start = xml.indexOf(open);
+  if (start < 0) return null;
+  final valStart = start + open.length;
+  final end = xml.indexOf(close, valStart);
+  if (end < 0) return null;
+  final value = xml.substring(valStart, end).trim();
+  return value.isEmpty ? null : value;
 }

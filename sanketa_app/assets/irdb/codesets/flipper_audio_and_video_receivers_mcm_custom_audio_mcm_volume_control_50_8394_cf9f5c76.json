@@ -1,0 +1,1 @@
+{"id":"flipper_audio_and_video_receivers_mcm_custom_audio_mcm_volume_control_50_8394_cf9f5c76","brand":"genericIr","deviceType":"soundbar","name":"MCM Volume Control 50-8394","source":"flipperIrdb","keyCount":3,"brandName":"MCM_Custom_Audio","keys":{"mute":{"p":"nec","a":0,"c":71},"volumeUp":{"p":"nec","a":0,"c":13},"volumeDown":{"p":"nec","a":0,"c":22}}}

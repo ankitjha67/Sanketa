@@ -6,6 +6,8 @@
 /// base URL comes from the device's `Application-URL` header (discovery layer).
 library;
 
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 class DialResult {
@@ -17,6 +19,61 @@ class DialResult {
   final String? error;
 }
 
+/// Normalise a user-facing app name ("NETFLIX", "prime", "Disney+") to the
+/// registered DIAL app name the TV expects.
+String dialAppName(String displayName) {
+  switch (displayName.toLowerCase()) {
+    case 'netflix':
+      return 'Netflix';
+    case 'youtube':
+      return 'YouTube';
+    case 'prime':
+    case 'prime video':
+    case 'amazon prime video':
+      return 'AmazonInstantVideo';
+    case 'disney+':
+    case 'disneyplus':
+      return 'DisneyPlus';
+    case 'hulu':
+      return 'Hulu';
+    case 'spotify':
+      return 'Spotify';
+    default:
+      return displayName;
+  }
+}
+
+/// Map user-facing app names to deep-link URIs for ATVRS/ATV app launch.
+///
+/// ATVRS field 90 (appLinkLaunch) sends a URI that the TV resolves via
+/// Android's verified-links / app-link mechanism. Web-style URLs work best
+/// because installed apps register the matching domains. Intent URIs
+/// (`intent:#Intent;…;end`) are not reliably handled by all ATVRS
+/// implementations.
+String? appDeepLink(String displayName) {
+  switch (displayName.toLowerCase()) {
+    case 'netflix':
+      return 'https://www.netflix.com/title';
+    case 'youtube':
+      return 'https://www.youtube.com';
+    case 'prime':
+    case 'prime video':
+    case 'amazon prime video':
+      return 'https://app.primevideo.com';
+    case 'disney+':
+    case 'disneyplus':
+      return 'https://www.disneyplus.com';
+    case 'hulu':
+      return 'https://www.hulu.com';
+    case 'spotify':
+      return 'https://open.spotify.com';
+    case 'plex':
+      return 'https://app.plex.tv';
+    default:
+      return null;
+  }
+}
+
 class DialClient {
   DialClient({required Uri appsBaseUrl, http.Client? client})
       : _base = appsBaseUrl,
@@ -24,6 +81,7 @@ class DialClient {
 
   final Uri _base;
   final http.Client _client;
+  static const _timeout = Duration(seconds: 5);
 
   Uri _app(String appName) {
     final basePath = _base.path.endsWith('/') ? _base.path : '${_base.path}/';
@@ -38,11 +96,14 @@ class DialClient {
         _app(appName),
         headers: {'Content-Type': 'text/plain; charset=utf-8'},
         body: body,
-      );
+      ).timeout(_timeout);
       if (res.statusCode == 201 || res.statusCode == 200) {
         return DialResult(ok: true, instanceUrl: res.headers['location']);
       }
       return DialResult(ok: false, error: 'http ${res.statusCode}');
+    } on TimeoutException {
+      return const DialResult(
+          ok: false, error: 'TV did not respond to DIAL launch');
     } on Object catch (e) {
       return DialResult(ok: false, error: '$e');
     }
@@ -52,7 +113,7 @@ class DialClient {
   Future<DialResult> stop(String appName, {String? instanceUrl}) async {
     try {
       final url = instanceUrl != null ? Uri.parse(instanceUrl) : _app(appName);
-      final res = await _client.delete(url);
+      final res = await _client.delete(url).timeout(_timeout);
       return (res.statusCode >= 200 && res.statusCode < 300)
           ? const DialResult(ok: true)
           : DialResult(ok: false, error: 'http ${res.statusCode}');
@@ -64,7 +125,7 @@ class DialClient {
   /// Whether [appName] is installed/running (2xx from its GET).
   Future<bool> isAvailable(String appName) async {
     try {
-      final res = await _client.get(_app(appName));
+      final res = await _client.get(_app(appName)).timeout(_timeout);
       return res.statusCode >= 200 && res.statusCode < 300;
     } on Object {
       return false;

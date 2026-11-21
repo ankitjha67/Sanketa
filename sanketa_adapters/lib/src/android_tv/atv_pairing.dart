@@ -18,9 +18,11 @@ import 'package:crypto/crypto.dart';
 
 /// The 6-hex-digit code from the TV, as raw bytes (e.g. "4A5B6C" → [0x4A,…]).
 List<int> decodeHexCode(String code) {
-  final clean = code.trim();
-  if (clean.length.isOdd) {
-    throw FormatException('pairing code must be an even number of hex digits: $code');
+  final clean = code.trim().toUpperCase();
+  if (!RegExp(r'^[0-9A-F]{6}$').hasMatch(clean)) {
+    throw const FormatException(
+      'pairing code must contain exactly 6 hexadecimal digits',
+    );
   }
   final out = <int>[];
   for (var i = 0; i < clean.length; i += 2) {

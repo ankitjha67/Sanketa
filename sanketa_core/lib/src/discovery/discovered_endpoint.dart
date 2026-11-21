@@ -72,6 +72,7 @@ class DiscoveredDevice {
     required this.sources,
     this.adapterId,
     this.confident = true,
+    this.metadata = const {},
   });
 
   final Device device;
@@ -87,6 +88,10 @@ class DiscoveredDevice {
 
   /// False when classification fell back to a generic guess.
   final bool confident;
+
+  /// Accumulated discovery metadata (SSDP location, extra attributes).
+  /// Keys: `location` (UPnP description URL), plus any TXT/header data.
+  final Map<String, String> metadata;
 }
 
 bool _isIpLiteral(String h) {

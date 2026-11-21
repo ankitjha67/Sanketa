@@ -95,7 +95,7 @@ class RokuAdapter implements ControlAdapter {
   CapabilityMap capabilities() => CapabilityMap(
         keys: _keyMap.keys.toSet(),
         textMode: TextInjectionMode.live, // Lit_ literal keys
-        wake: true, // PowerOn works on WiFi-power-on Roku TVs
+        wake: false, // WoL not yet implemented
         volumeReadback: false, // ECP does not report volume level
         appLaunch: true,
         inputList: false, // not enumerable via ECP; UI uses a static list

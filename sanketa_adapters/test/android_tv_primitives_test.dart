@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:sanketa_adapters/src/android_tv/atv_framing.dart';
 import 'package:sanketa_adapters/src/android_tv/atv_keymap.dart';
 import 'package:sanketa_adapters/src/android_tv/atv_pairing.dart';
+import 'package:sanketa_adapters/src/android_tv/der_utils.dart';
 import 'package:sanketa_adapters/src/android_tv/protobuf_codec.dart';
 import 'package:sanketa_core/sanketa_core.dart';
 import 'package:test/test.dart';
@@ -15,7 +17,8 @@ void main() {
       expect(w.toBytes(), [0x08, 0x96, 0x01]);
     });
 
-    test('string field 2 = "testing" encodes to 12 07 74 65 73 74 69 6e 67', () {
+    test('string field 2 = "testing" encodes to 12 07 74 65 73 74 69 6e 67',
+        () {
       final w = ProtoWriter()..writeString(2, 'testing');
       expect(w.toBytes(), [0x12, 0x07, ...utf8.encode('testing')]);
     });
@@ -65,6 +68,20 @@ void main() {
       expect(f2.number, 2);
       expect(r.readVarint(), 7);
     });
+
+    test('rejects invalid writes and truncated skipped fields', () {
+      expect(() => ProtoWriter().writeUint(1, -1), throwsArgumentError);
+      expect(() => ProtoWriter().writeUint(0, 1), throwsArgumentError);
+      expect(() => ProtoReader([0]).readTag(), throwsFormatException);
+      expect(
+        () => ProtoReader([5, 1, 2]).skip(WireType.lengthDelimited),
+        throwsFormatException,
+      );
+      expect(
+        () => ProtoReader([1, 2, 3]).skip(WireType.fixed32),
+        throwsFormatException,
+      );
+    });
   });
 
   group('message framing', () {
@@ -98,6 +115,24 @@ void main() {
       final deframer = MessageDeframer()..addChunk(framed);
       expect(deframer.drain().single, body);
     });
+
+    test('rejects a frame larger than the configured safety limit', () {
+      final deframer = MessageDeframer(maxFrameSize: 4)..addChunk([5]);
+      expect(deframer.drain, throwsFormatException);
+    });
+  });
+
+  group('DER parsing', () {
+    test('malformed certificates fail with FormatException', () {
+      expect(
+        () => rsaPublicKeyFromDer(Uint8List.fromList(const [])),
+        throwsFormatException,
+      );
+      expect(
+        () => rsaPublicKeyFromDer(Uint8List.fromList(const [0x30, 0x05, 0x30])),
+        throwsFormatException,
+      );
+    });
   });
 
   group('android keycodes', () {
@@ -126,6 +161,12 @@ void main() {
       expect(decodeHexCode('4A5B6C'), [0x4A, 0x5B, 0x6C]);
     });
 
+    test('rejects malformed or incorrectly sized pairing codes', () {
+      expect(() => decodeHexCode(''), throwsFormatException);
+      expect(() => decodeHexCode('1234'), throwsFormatException);
+      expect(() => decodeHexCode('ZZZZZZ'), throwsFormatException);
+    });
+
     test('nonce drops the leading checksum byte', () {
       expect(nonceFromCode([0x4A, 0x5B, 0x6C]), [0x5B, 0x6C]);
     });
@@ -144,9 +185,13 @@ void main() {
         serverExponent: serverExp,
         nonce: nonce,
       );
-      final expected = sha256
-          .convert([...clientMod, ...clientExp, ...serverMod, ...serverExp, ...nonce])
-          .bytes;
+      final expected = sha256.convert([
+        ...clientMod,
+        ...clientExp,
+        ...serverMod,
+        ...serverExp,
+        ...nonce
+      ]).bytes;
       expect(got, expected);
     });
 

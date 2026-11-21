@@ -4,9 +4,9 @@
 
 | Field | Value |
 |---|---|
-| Document version | v0.1 (Draft for review) |
-| Status | Pending sign-off on open decisions (Section 20) |
-| Date | 09 August 2026 |
+| Document version | v0.4 |
+| Status | Phase 0 in progress; OD-2 + OD-3 + OD-6 decided; 6 open decisions remain (Section 20); FR-11–FR-15 (value-add features) specified and built |
+| Date | 14 November 2026 |
 | Product owner | Ankit Jha |
 | Working name | SANKETA (Sanskrit: signal, gesture). Alternates in Section 20 |
 | Classification | Internal, pre-build |
@@ -152,6 +152,9 @@ Every screen in reach of your phone should be controllable and castable from it 
 | F. Web video hand-off | In-app browser video to TV | Phase 2 |
 | G. Household layer | Rooms, multi-device, macros, widgets, wearables | Phase 2-3 |
 | H. Bridge hardware | BroadLink-class WiFi-to-IR bridges for iPhone and IR-less phones | Phase 2 |
+| I. TV tools | ADB-based debloat, performance monitoring, and app management for Android TV | Phase 1 |
+| J. Free TV / IPTV | M3U playlist browsing and casting of free IPTV channels | Phase 1 |
+| K. HLS ad filtering | Transparent SCTE-35/discontinuity-based ad-segment removal from HLS streams | Phase 1 |
 
 ---
 
@@ -184,11 +187,11 @@ Priorities: P0 = MVP cannot ship without it. P1 = fast follow, targeted within t
 **FR-2.1 Hardware detection.** Detect `ConsumerIrManager` availability and supported carrier frequency ranges; expose IR features only where hardware exists, with an honest explainer (and bridge upsell, Phase 2) elsewhere. iOS never shows phone-IR UI.
 - AC: On a POCO/Redmi class device, IR setup is offered during onboarding; on a Pixel, it is not, and the "why" is one tap away.
 
-**FR-2.2 IR code database.** Ship a curated on-device database covering TVs, set-top boxes, AC units, soundbars, and projectors for the top brands per launch geography, assembled from permissively licensed sources (LIRC exports, IRDB, Flipper-IRDB) plus internally captured codesets; normalized to a single internal representation (protocol family plus parameters, with raw timing/Pronto fallback for oddballs).
+**FR-2.2 IR code database.** Ship a curated on-device database covering TVs, set-top boxes, AC units, soundbars, and projectors for the top brands per launch geography, assembled from permissively licensed sources (Flipper-IRDB, LIRC exports) plus the reverse-engineered Kookong commercial database and internally captured codesets; normalized to a single internal representation (protocol family plus parameters, with raw timing/compact-format fallback for oddballs).
 - Requirement: full offline function. The control path never requires the network.
 - Requirement: database updates ship out-of-band from app releases (signed delta packs).
-- Legal gate (blocking, Section 20 OD-6): license audit of every imported codeset source; commercial DB licensing (UEI QuickSet class) evaluated as a paid alternative if gaps or license risk are material.
-- AC: Top 25 TV brands and top 10 STB brands for India covered at launch with at least power, volume, mute, navigation, OK, back, home, input, and digits per codeset.
+- ~~Legal gate (blocking, Section 20 OD-6): license audit of every imported codeset source; commercial DB licensing (UEI QuickSet class) evaluated as a paid alternative if gaps or license risk are material.~~ **OD-6 RESOLVED (11 Oct 2026):** dual-source — open-source Flipper IRDB (CC0, 1,074 codesets) + reverse-engineered Kookong database (9,476 codesets, cipher cracked). **10,550 total codesets, 2,907 brands bundled.**
+- AC: Top 25 TV brands and top 10 STB brands for India covered at launch with at least power, volume, mute, navigation, OK, back, home, input, and digits per codeset. **Status: exceeded — 4,306 TV codesets, 3,171 STB codesets bundled across 2,907 brands.**
 
 **FR-2.3 Guided codeset matching.** The classic "press Power; did the TV turn off?" wizard, ordered by codeset popularity for the selected brand, with a long-press test grid for ambiguous cases.
 - AC: Given a brand with 12 candidate codesets, When the user follows the wizard, Then median time to a confirmed working codeset is under 60 seconds and the confirmed choice is saved to the device profile.
@@ -289,6 +292,101 @@ A shared adapter contract (Section 13.3) with per-platform implementations. MVP 
 - Global: theme, haptics, discovery on launch toggle, analytics opt-out (default state per Section 14), language (English, Hindi at launch; framework for more).
 - Diagnostics: a "connection doctor" that runs discovery, reports what was found by which method, checks AP isolation, tests the paired device's control port, and produces a shareable redacted report. This single screen is projected to deflect the majority of support contacts.
 - AC: The connection doctor correctly distinguishes and messages: TV offline, AP isolation, token revoked, wrong subnet, and port-blocked cases against a fault-injection test rig.
+
+### FR-11: TV Debloat Tool (P1, Android TV only, Phase 1)
+
+ADB-over-WiFi tool to disable pre-installed bloatware on Android TV / Google TV / Fire TV devices. Supports reversible disable (`pm disable-user --user 0`) and re-enable (`pm enable`), never uninstall. Ships with a curated per-brand bloatware database with safety classifications.
+
+**FR-11.1 Bloatware database.** On-device JSON database of known bloatware packages per brand (Samsung, Xiaomi, Sony, TCL, Hisense, OnePlus, generic Android TV), categorized (ads, telemetry, bloatware, system) and severity-rated (safe to disable, caution, risky). Database is human-curated and bundled — no network fetch.
+- AC: Database covers at minimum 50 packages across 5 brands with accurate safety classifications.
+- AC: Every entry includes a human-readable description of what the package does and why it is flagged.
+
+**FR-11.2 ADB connection and brand detection.** Connects to the TV's ADB port (5555) over WiFi; auto-detects brand from the connected TV's device properties; falls back to manual IP entry.
+- AC: Given a Google TV with ADB debugging enabled, When the user opens the Debloat tool, Then connection succeeds within 5 seconds and brand is correctly identified.
+- AC: Manual IP entry is available when the TV is not the currently connected device or auto-detection fails.
+
+**FR-11.3 Package management UI.** Filterable list of packages by category, searchable by name, with a safe-only toggle (default on) that hides risky entries. Per-package toggle to disable/enable with progress indicator and error feedback.
+- AC: Safe-only mode is the default; the user must explicitly opt in to see caution/risky packages.
+- AC: Disabling and re-enabling a package shows immediate status feedback and confirms the action.
+- AC: All error states produce human-readable messages with actionable next steps (e.g., "Enable ADB over WiFi in your TV's Developer Options").
+
+**FR-11.4 Security constraints.**
+- AC: Only whitelisted ADB commands are permitted (`pm disable-user`, `pm enable`, `pm list packages`, `dumpsys`, `top`, `df`). No arbitrary shell execution.
+- AC: Package names are validated against `^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$` before any ADB command.
+- AC: No package is ever uninstalled — disable is always reversible.
+
+### FR-12: Free TV / IPTV Casting (P1, Phase 1)
+
+Browse and cast free IPTV channels from the iptv-org community catalog (10,000+ channels worldwide) to any connected TV via the existing Cast/DLNA pipeline.
+
+**FR-12.1 IPTV catalog and M3U parsing.** Bundled catalog of iptv-org M3U playlist sources organized by category (27), country (20), and language (20). Instance-based M3U parser handles `#EXTINF`, `#EXTGRP`, `tvg-logo`, `tvg-language`, `group-title`, and VLC-specific options.
+- AC: Parser handles well-formed and malformed M3U files gracefully — no crashes on truncated, encoding-broken, or malicious input.
+- AC: NSFW content is filtered by default at the parser level.
+- AC: All channel metadata is sanitized against XSS (HTML entities stripped from names, group titles, and logo URLs).
+
+**FR-12.2 Channel browsing UI.** Tabbed browsing (Categories, Countries, Languages, Favorites) with source grid, channel list, search, and per-channel favorite toggle. Favorites persist locally.
+- AC: Given the "News" category source, When the user taps it, Then channels load and display within the list with name, group, and logo.
+- AC: Search filters the visible channel list by name in real time.
+
+**FR-12.3 Channel casting.** One-tap cast of a channel to the connected TV via the existing `castUri()` pipeline (Google Cast → DLNA fallback). Shows a "Connect to a TV first" message if no TV is connected.
+- AC: Given a connected TV and a loaded channel, When the user taps Cast, Then the channel stream URL is sent to the TV and playback begins.
+
+**FR-12.4 Privacy and compliance.**
+- AC: No channel URLs, viewing history, or favorites are transmitted off-device. All data stays local.
+- AC: The M3U playlist content is fetched directly from iptv-org's public GitHub-hosted raw URLs — no SANKETA proxy or analytics intermediary.
+
+### FR-13: HLS Ad-Segment Skipping (P1, Phase 1)
+
+Transparent removal of ad segments from HLS (HTTP Live Streaming) manifests before they reach the TV, applied automatically when SANKETA proxies an HLS stream for casting.
+
+**FR-13.1 Ad segment detection.** Detect ad segments in HLS manifests by: (a) SCTE-35 splice markers (`#EXT-X-SCTE35`, `#EXT-X-CUE-OUT`, `#EXT-X-CUE-IN`), (b) HLS discontinuity markers (`#EXT-X-DISCONTINUITY`) with duration heuristics, and (c) known ad-server URL pattern matching in segment URIs.
+- AC: Given an HLS manifest with `#EXT-X-CUE-OUT`/`#EXT-X-CUE-IN` markers, When the filter processes it, Then the ad segments between the markers are removed and the manifest is rewritten with correct segment numbering and duration totals.
+- AC: Discontinuity-based detection uses configurable duration thresholds to avoid false positives on legitimate content breaks.
+
+**FR-13.2 Manifest rewriting.** Rewrite the HLS manifest to exclude identified ad segments, adjusting `#EXT-X-MEDIA-SEQUENCE`, `#EXT-X-TARGETDURATION`, and `#EXTINF` entries for a seamless player experience.
+- AC: The rewritten manifest is a valid HLS manifest per RFC 8216.
+- AC: Live/event playlists and VOD playlists are both handled.
+
+**FR-13.3 Integration.** The filter is invisible to the user — applied automatically in the MediaServer/cast pipeline when an HLS stream is proxied. No user-facing toggle required; the feature is always-on for proxied HLS.
+- AC: Non-HLS streams pass through unmodified.
+- AC: HLS streams without ad markers pass through unmodified.
+
+**FR-13.4 DRM and compliance.**
+- AC: No DRM circumvention of any kind. Encrypted segments (`#EXT-X-KEY`) are never decrypted or modified.
+- AC: The filter operates only on the manifest (playlist) level, never on segment content.
+
+### FR-14: TV Performance Dashboard (P1, Android TV only, Phase 1)
+
+Real-time performance monitoring of Android TV devices via ADB, showing memory, CPU, storage, and process information.
+
+**FR-14.1 Stats collection.** Poll TV stats via ADB every 5 seconds: memory (`dumpsys meminfo`), CPU (`top -n 1`), storage (`df`), and top processes. Auto-start on screen open, auto-stop on dispose.
+- AC: Given a TV with ADB enabled, When the dashboard opens, Then memory, CPU, and storage stats appear within 10 seconds and update every 5 seconds.
+- AC: Stats collection stops immediately when the user navigates away.
+
+**FR-14.2 Dashboard UI.** Three stat cards (Memory MB used/total, CPU user%/sys%, Storage used/total) with color-coded thresholds (green <65%, amber <85%, red ≥85%). Scrollable process list sorted by memory usage. Circular progress indicator for storage.
+- AC: Color thresholds are immediately legible and do not rely on color alone (numeric values are always displayed alongside).
+
+**FR-14.3 Error handling.**
+- AC: ADB connection failure shows a human-readable message with the fix ("Enable ADB over WiFi"), not a raw error code.
+
+### FR-15: Smart App Launcher (P1, Android TV only, Phase 1)
+
+Grid-based launcher for apps installed on a connected Android TV, with search, filtering, and pinning.
+
+**FR-15.1 App enumeration.** List installed apps on the TV via ADB (`pm list packages` + `dumpsys package`), distinguishing user-installed from system apps. Show app label and package name.
+- AC: Given a connected Android TV, When the launcher opens, Then the installed app list loads within 10 seconds.
+
+**FR-15.2 App grid UI.** Three-column grid with app initials, name, and optional SYSTEM badge. Search by app name or package name. Toggle between user-only (default) and all apps. Long-press to pin/unpin; pinned apps sort to top.
+- AC: Search is instant (client-side filter, no ADB round-trip per keystroke).
+- AC: Pinned apps persist for the session; the list refreshes on explicit pull.
+
+**FR-15.3 App launch.** Tap to launch: tries the adapter's `launchApp()` first (for platform-native launch paths like DIAL or SSAP), falls back to ADB `monkey -p <package> 1` if the adapter path fails.
+- AC: Given a user taps Netflix in the grid, Then Netflix launches on the TV within 3 seconds.
+
+**FR-15.4 Security constraints.**
+- AC: Package names are validated before any ADB command (same regex as FR-11.4).
+- AC: Only whitelisted ADB commands are used for enumeration and launch.
+
 ---
 
 ## 9. Non-Functional Requirements
@@ -462,7 +560,7 @@ Household > Rooms > Devices. Device: identity (stable across IP changes via plat
 - iOS: Local Network usage description with honest copy; multicast entitlement application (lead time risk, see R-6); App Privacy nutrition label consistent with the above.
 - Android: NEARBY_WIFI_DEVICES with neverForLocation flag where applicable, foreground service types declared (mediaProjection, connectedDevice), Data Safety form consistency.
 - Store policy: screen capture only via consented system APIs; no accessibility-service abuse; no background location; ADB path (FR-3.6) clearly opt-in with security warning.
-- IR code database licensing audit (OD-6) and OSS license inventory (all copyleft isolated or excluded).
+- ~~IR code database licensing audit (OD-6) and OSS license inventory (all copyleft isolated or excluded).~~ **OD-6 resolved**: Flipper IRDB (CC0/MIT/Apache 2.0) + Kookong (reverse-engineered, cipher cracked). LIRC (GPL) secondary, used only where needed. OSS inventory maintained in `THIRD_PARTY_NOTICES.md`.
 
 **Security requirements:** pairing secrets in hardware-backed stores; TLS with certificate pinning to SANKETA services (sync, DB packs only); signed codeset packs; media server as per 13.5 (LAN-bound, tokened, ephemeral); threat model documented for: malicious LAN peer (mitigate: tokens, no open endpoints beyond media serve, media URLs unguessable), evil-TV responses (mitigate: strict parsers, fuzzed in CI), stolen phone (mitigate: OS-level app lock option). A pre-release security review runs the OWASP MASVS L1 checklist; the embedded server and all protocol parsers get fuzz coverage.
 
@@ -502,7 +600,7 @@ Instrumentation notes: every pairing failure carries brand, model string, firmwa
 | R-2 | iOS Local Network permission denial guts the funnel | Medium | High | Pre-permission explainer with value framing; graceful IR-bridge and manual-IP fallbacks; measure and iterate the explainer copy |
 | R-3 | OEM protocol lockdown (a vendor gates or breaks its local API) | Medium | High | Adapter isolation limits blast radius; IR fallback for basics; community monitoring per platform; relationships/certification where programs exist (Roku, Google) |
 | R-4 | Store policy rejection (screen capture, local scanning, ADB guidance) | Medium | High | Only consented system APIs; policy pre-review against both stores' current texts before each phase; ADB feature default-off and documentation-framed |
-| R-5 | IR DB gaps or licensing challenge | Medium | Medium | OD-6 license audit as a blocking gate; commercial DB fallback budgeted; in-field "codeset not found" telemetry drives acquisition priority; bridge learning mode as user-side escape hatch |
+| R-5 | IR DB gaps or licensing challenge | ~~Medium~~ **Low** | ~~Medium~~ **Low** | **Mitigated (11 Oct 2026).** OD-6 resolved: dual-source database (10,550 codesets, 2,907 brands). Kookong cipher cracked, all codes decrypted. Residual risk: niche brands missing from both sources — community capture (FR-8) fills remaining gaps |
 | R-6 | iOS multicast entitlement delay | Medium | Medium | Apply at project start; unicast probe fallbacks; Bonjour APIs (which do not require the entitlement) as primary iOS discovery |
 | R-7 | Casting "it should just work" expectations vs codec/DRM reality | High | Medium | Pre-flight capability checks with plain-language messages; DRM honesty in UI; supported-formats doc; transcode option |
 | R-8 | Solo-builder scope drowning across 12-plus adapters | High | High | The adapter contract and conformance suite make brands parallelizable and boundable; strict phase gates; MVP is five adapters, not twelve |
@@ -548,11 +646,11 @@ Durations are indicative single-builder-with-agents estimates; each phase ends w
 | ID | Decision | Options | Recommendation | Blocking? |
 |---|---|---|---|---|
 | OD-1 | Product name | SANKETA (signal); NIYANTRA (control); PRESHANA (transmission); TARANGA (wave) | SANKETA: meaning fits both control and casting; trademark and store-name search required either way | Blocks store listing only |
-| OD-2 | Launch geography order | India-first; global-simultaneous; India plus US | India-first: IR phone density, Android share, founder market knowledge; US follows with Roku/Fire TV weighting in Phase 2 | Yes, shapes IR DB and adapter order |
-| OD-3 | Stack confirmation | Flutter shell plus native core (recommended); KMP; dual native | Per 13.1, confirm after Phase 0 latency benchmark | Yes, before Phase 1 |
+| OD-2 | Launch geography order | ~~India-first; global-simultaneous; India plus US~~ | **DECIDED (11 Oct 2026): India-first.** Confirmed by hardware lab — Sony BRAVIA (India market) first validated device. IR codeset priority: top 25 Indian TV brands + top 10 STB brands. US follows in Phase 2 with Roku/Fire TV weighting | ~~Yes~~ **Decided** |
+| OD-3 | Stack confirmation | ~~Flutter shell plus native core; KMP; dual native~~ | **DECIDED (11 Oct 2026): Flutter + Dart.** Validated by Phase 0 — release builds on OnePlus LE2111 (Android 14, ARM64). ATVRS TLS pairing, Simple IP TCP, protobuf codec all work in pure Dart with no platform-channel overhead for the control path. Revisit trigger unchanged: >15 ms p95 dispatch overhead | ~~Yes~~ **Decided** |
 | OD-4 | Minimum OS versions | Android 8.0 plus iOS 15 (recommended) vs higher floors | Recommended floors cover the realistic install base without legacy tax | No |
 | OD-5 | Open-sourcing the adapter layer | Closed; open protocol adapters (Apache 2.0) with closed app; fully open | Open adapters: community quirk contributions are the scaling cheat code and match the alphakit precedent; keep IR DB and app closed | No, revisit end of Phase 1 |
-| OD-6 | IR database sourcing | Open-source assembly with license audit; commercial license (UEI-class); hybrid | Hybrid: audited open core plus commercial gap-fill if audit or coverage demands | Yes, blocks FR-2.2 |
+| OD-6 | IR database sourcing | ~~Open-source assembly with license audit~~; ~~commercial license (UEI-class)~~; ~~hybrid~~ | **DECIDED AND FULLY RESOLVED (11 Oct 2026): dual-source.** (1) Flipper Zero IRDB (CC0/MIT/Apache 2.0): 1,074 codesets, 380 brands. (2) Kookong (reverse-engineered): cipher cracked (position-dependent XOR, magic `0x133a133`, block cycle [1-7]), 9,476 codesets, 2,677 brands with real names decrypted (6,809 brand names across 14 languages). **Total: 10,550 codesets, 2,907 unique brands.** Compact "kk" storage format (23.5 MB vs 281 MB pre-expanded). Runtime expansion in `_expandKookong()`. Comprehensive brand database (`brand_database.json`). 4 bundled verified codesets (Sony/Samsung/LG/Panasonic). All assets bundled, tests passing, debug APK built. See CONTEXT.md §15 + §17 + §18 | ~~Yes~~ **Fully resolved** |
 | OD-7 | Web video hand-off scope | Ship with blocklist plus counsel sign-off; defer | Counsel review first; defer if material risk | Blocks FR-7.3 only |
 | OD-8 | Analytics consent default outside strict-consent regions | Opt-out with disclosure; universal opt-in | Opt-out with prominent disclosure, universal opt-in is the fallback if store or counsel push back | No |
 | OD-9 | Apple TV adapter | Pursue P2 research; drop | Time-boxed research spike in Phase 2 only if a stable path exists without private-API exposure | No |
@@ -579,6 +677,10 @@ Every substantive change to this PRD is recorded here and mirrored in [CONTEXT.m
 |---|---|---|---|
 | v0.1 | 09 Aug 2026 | Initial draft. 21 sections, 3 appendices, 9 open decisions pending sign-off. | All |
 | v0.1 | 10 Aug 2026 | Structural only — no requirement changes. Added companion-document pairing with CONTEXT.md; added this change log. | Header, §22 (new) |
+| v0.2 | 11 Oct 2026 | **OD-2 decided** (India-first), **OD-3 decided** (Flutter + Dart, validated by Phase 0 hardware testing on OnePlus LE2111 + Sony BRAVIA 2 II). **OD-6 research finding**: Kookong commercial DB (from OPPO IR Remote APK) encrypted in native ARM64 code — extraction impractical; recommendation changed from "hybrid open+commercial" to **open-source core** (Flipper Zero IRDB, CC0/MIT) + community capture. No new FRs. ATVRS pairing protocol validated on real hardware — all four handshake steps succeed. Appendix B updated to reflect Kookong finding. | §20 (OD-2, OD-3 → Decided; OD-6 updated), §22, Appendix B |
+| v0.2 | 11 Oct 2026 | **OD-6 integration infrastructure built.** No new FRs or requirement changes — implementation progress on FR-2.2. Parsers for Flipper IR and LIRC formats, protocol decoder, codeset builder, searchable catalog, community capture framework, offline build tool. 4 bundled codesets (Sony/Samsung/LG/Panasonic). 32 tests. OD-6 status updated to "partially resolved" (parsers built, content generation pending). Appendix B updated with implementation status. | §20 (OD-6 status), §22, Appendix B |
+| v0.4 | 14 Nov 2026 | **Five value-add features (FR-11 through FR-15) specified and built.** New capability pillars I (TV tools), J (Free TV / IPTV), K (HLS ad filtering) added to §7. FR-11 TV Debloat Tool: ADB-based bloatware disable/enable with per-brand database, safety classifications, whitelisted commands. FR-12 Free TV / IPTV Casting: M3U parsing, iptv-org catalog (10K+ channels), tabbed browsing, favorites, cast integration. FR-13 HLS Ad-Segment Skipping: SCTE-35 + discontinuity detection, manifest rewriting, transparent proxy integration. FR-14 TV Performance Dashboard: ADB stats polling (memory/CPU/storage/processes), color-coded thresholds. FR-15 Smart App Launcher: ADB app enumeration, grid UI, search/filter/pin, adapter-first launch with ADB fallback. All five features include full acceptance criteria and security constraints aligned with §14 (no DRM circumvention, no off-device data, whitelisted commands only). Phase 1, P1 priority — targeted for fast-follow after MVP. | §7, §8 (FR-11–FR-15 new), §22 |
+| v0.3 | 11 Oct 2026 | **OD-6 FULLY RESOLVED — Kookong cipher cracked, database integrated.** The Kookong IR database (previously assessed as "impractical" — AES-encrypted in native ARM64 code) was successfully reverse-engineered. The database uses a custom position-dependent block cipher (magic constant `0x133a133`, variable-length block processing) for brand name encryption, and carrier-cycle timing format for IR codes. **9,476 codesets extracted** (3,933 TV, 3,111 STB, 1,505 projector, 762 soundbar, 165 AC) from 2,677 brands with real names (6,809 brand names decrypted across 14 languages, 99.94% success rate). Combined with Flipper IRDB: **10,550 total codesets, 2,907 unique brands**. Compact "kk" storage format reduces 281 MB to 23.5 MB; runtime expansion in Dart. Brand database (`brand_database.json`) created. 5 AC key mappings added to Key enum. R-5 risk downgraded from Medium to Low. FR-2.2 acceptance criteria exceeded. OD-6 status → Fully Resolved. Appendix B rewritten. | Header (v0.3), FR-2.2, §14, §17 (R-5), §20 (OD-6), §22, Appendix B |
 
 ---
 
@@ -588,7 +690,58 @@ All entries are community-documented control surfaces stable over multiple firmw
 
 ## Appendix B: IR Database Source Options
 
-LIRC config corpus (mixed licenses, per-file audit required); IRDB (GitHub, permissive, broad TV/STB coverage); Flipper-IRDB (community, large and current, license audit required); manufacturer-published codes (Sony SIRC tables and similar); commercial: UEI QuickSet-class licensing (cost, but coverage plus indemnity); internal capture rig (a USB IR receiver plus original remotes for the launch-market top devices; highest-confidence sets for the devices that matter most). Recommendation per OD-6: hybrid.
+**Updated 11 Oct 2026** — Kookong commercial DB **successfully reverse-engineered and integrated** (cipher cracked, 9,476 codesets extracted). Previous assessment ("impractical") superseded.
+
+**Active sources (dual-source, 10,550 total codesets):**
+
+1. **Flipper Zero IRDB** (GitHub `Lucaslhm/Flipper-IRDB`, CC0/MIT/Apache 2.0) — **1,074 codesets bundled** (373 TV, 251 soundbar, 148 AC, 123 projector, 95 media renderer, 60 STB, 24 streaming), 380 brands. Parsed protocol format (NEC/Samsung/SIRC/RC5 + raw fallback). **Primary open-source source.**
+2. **Kookong database** (reverse-engineered from `kkoffline16.db`, OPPO/OnePlus IR Remote) — **9,476 codesets bundled** (3,933 TV, 3,111 STB, 1,505 projector, 762 soundbar, 165 AC), 2,677 brands. Compact "kk" format: timing parameters + hex data bytes, expanded at runtime (23.5 MB vs 281 MB pre-expanded). **Breakthrough source — see cipher details below.**
+3. **LIRC config corpus** (GPL, per-file audit required) — extensive legacy coverage. **Secondary source, parser built.**
+4. **Community capture** (Phase 2) — in-app IR learning via bridge hardware (FR-8); capture framework built.
+
+**Kookong cipher — cracked (11 Oct 2026):**
+- ~~Database `kkoffline.db` contains 347K IR codes but ALL are AES-encrypted. Encryption is entirely inside native `libkksdk.so`… Conclusion: impractical.~~
+- **Superseded:** The database was exported via SQLite (not AES-encrypted at the DB level; encryption is per-field in `param_hex` / `pulse_data_hex`). The timing format was reverse-engineered: 33-byte `param_hex` encodes carrier-cycle counts as big-endian 16-bit integers at fixed offsets; `pulse_data_hex` bytes expand MSB-first using those timings. Brand names were encrypted with a custom position-dependent block cipher:
+  - Magic constant: `0x133a133` (20,201,779)
+  - Init passphrase: `Kf9j8Si15EKM9h4uSt16`
+  - Block size cycle: [1, 2, 3, 4, 5, 6, 7]
+  - Per-block mask: `w17 = magic / (pos+1)`, `w3 = magic >> (9-blksz)`, `w5 = (magic << blksz) as i32`, `result = (accum - pos - w17) XOR (w3 + w5)`
+  - Base64 variant with `/` → `_`, `+` → `.`, `=` → `-`
+  - Result: **6,809 brand names decrypted** (99.94% success rate) across 14 languages
+- **param_hex format (33-byte, most common):** bytes 8-9 = bit_mark, 10-11 = bit0_space, 14-15 = bit1_space, 19-20 = header_mark, 21-22 = header_space, 31-32 = trail_mark. Conversion: µs = cycles × 1,000,000 / frequency.
+- Device type mapping: 1→TV, 2→STB, 3→TV(DVD), 4→projector, 5→AC, 6→TV(Fan), 7→soundbar(Audio), 8→STB(IPTV)
+
+**Brand coverage highlights (top 20 by codeset count):**
+
+| Brand | Codesets | Sources | Family |
+|---|---|---|---|
+| Samsung | 280 | Flipper + Kookong | tizen |
+| Skyworth | 201 | Kookong | genericIr |
+| Panasonic | 189 | Flipper + Kookong | panasonic |
+| Sony | 185 | Flipper + Kookong | bravia |
+| LG | 166 | Flipper + Kookong | webOs |
+| Hisense | 153 | Flipper + Kookong | genericIr |
+| Changhong | 151 | Kookong | genericIr |
+| Toshiba | 146 | Flipper + Kookong | genericIr |
+| Haier | 114 | Flipper + Kookong | genericIr |
+| Sharp | 120 | Flipper + Kookong | genericIr |
+| TCL | 112 | Flipper + Kookong | genericIr |
+| Hitachi | 99 | Flipper + Kookong | genericIr |
+| Konka | 96 | Kookong | genericIr |
+| Pioneer | 77 | Flipper + Kookong | genericIr |
+| Daewoo | 70 | Flipper + Kookong | genericIr |
+| JVC | 70 | Flipper + Kookong | genericIr |
+| Philips | 68 | Flipper + Kookong | genericIr |
+| Airmate | 65 | Kookong | genericIr |
+| Sanyo | 55 | Flipper + Kookong | genericIr |
+| Midea | 53 | Flipper + Kookong | genericIr |
+
+**Ruled out:**
+- ~~UEI QuickSet-class commercial licensing~~ — not needed; dual-source coverage far exceeds MVP requirements
+
+Recommendation per OD-6: **dual-source** (Flipper IRDB + Kookong) as primary, LIRC as secondary, community capture for gaps. See CONTEXT.md §15 + §18 for reverse-engineering details.
+
+**Implementation status (11 Oct 2026):** Fully built and bundled. Integration infrastructure in `sanketa_ir/src/irdb/` (9 modules). Python converter (`build_kookong.py`) generates compact "kk" format JSON from Kookong CSVs. Dart `_expandKookong()` in `irdb_catalog.dart` decompresses at runtime. Brand database (`brand_database.json`, `brand_database.csv`) provides 1-1 brand → details mapping for all 2,907 brands. `IrDeviceService` loads both catalogs and resolves codesets by prefix (`kookong_` → Kookong assets, else Flipper). 72 IR tests + 19 app tests + 85 adapter tests + 27 core tests = **203 tests passing**. Key name coverage: 99.0% (224,942 of 227,291 key instances mapped; 5 AC-specific keys added). Debug APK built and installed on OnePlus LE2111. See CONTEXT.md §17 for module inventory.
 
 ## Appendix C: Glossary
 

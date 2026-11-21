@@ -71,9 +71,14 @@ class WebosAdapter implements ControlAdapter {
 
   @override
   CapabilityMap capabilities() => CapabilityMap(
-        keys: {..._webosButtons.keys, ..._webosSsapKeys.keys, Key.mute, Key.powerOff},
+        keys: {
+          ..._webosButtons.keys,
+          ..._webosSsapKeys.keys,
+          Key.mute,
+          Key.powerOff
+        },
         textMode: TextInjectionMode.live, // IME insertText
-        wake: true, // WoL (native)
+        wake: false, // WoL not yet implemented
         appLaunch: true,
         inputList: false,
         volumeReadback: false,
@@ -97,7 +102,7 @@ class WebosAdapter implements ControlAdapter {
             },
           },
         }));
-        context.notify?.call('Approve SANKETA on your TV');
+        context.notify?.call('Approve Sanketa on your TV');
         while (true) {
           final raw = await q.next.timeout(const Duration(seconds: 30));
           final data = jsonDecode(raw);
@@ -148,8 +153,8 @@ class WebosAdapter implements ControlAdapter {
       case TextOpKind.submit:
         return _send(_ssapFrame('ssap://com.webos.service.ime/sendEnterKey'));
       case TextOpKind.delete:
-        return _send(_ssapFrame(
-            'ssap://com.webos.service.ime/deleteCharacters', {'count': op.count}));
+        return _send(_ssapFrame('ssap://com.webos.service.ime/deleteCharacters',
+            {'count': op.count}));
       case TextOpKind.clear:
         return _send(_ssapFrame(
             'ssap://com.webos.service.ime/deleteCharacters', {'count': 255}));
@@ -161,8 +166,8 @@ class WebosAdapter implements ControlAdapter {
       _send(_ssapFrame('ssap://system.launcher/launch', {'id': app.id}));
 
   @override
-  Future<CommandResult> setInput(InputRef input) => _send(_ssapFrame(
-      'ssap://tv/switchInput', {'inputId': input.id}));
+  Future<CommandResult> setInput(InputRef input) =>
+      _send(_ssapFrame('ssap://tv/switchInput', {'inputId': input.id}));
 
   @override
   Future<CommandResult> power({required bool on}) => on

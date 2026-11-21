@@ -1,11 +1,11 @@
 {
-    "name": "sanketa_app",
-    "short_name": "sanketa_app",
+    "name": "Sanketa",
+    "short_name": "Sanketa",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#10131A",
+    "theme_color": "#10131A",
+    "description": "Sanketa — universal TV remote + casting.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

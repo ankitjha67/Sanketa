@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sanketa-web",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d E:\\Python\\Sanketa\\sanketa_app && flutter run -d chrome --web-port 8080"],
+      "port": 8080
+    }
+  ]
+}

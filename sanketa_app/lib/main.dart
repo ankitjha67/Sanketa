@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'control/remote_controller.dart';
-import 'screens/remote_screen.dart';
+import 'native/method_channel_ir_bridge.dart';
+import 'screens/app_shell.dart';
 import 'theme/app_theme.dart';
 
 void main() => runApp(const SanketaApp());
@@ -14,7 +15,9 @@ class SanketaApp extends StatefulWidget {
 }
 
 class _SanketaAppState extends State<SanketaApp> {
-  final RemoteController _controller = RemoteController();
+  final RemoteController _controller = RemoteController(
+    irBridge: const MethodChannelIrBridge(),
+  );
 
   @override
   void dispose() {
@@ -23,10 +26,13 @@ class _SanketaAppState extends State<SanketaApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        title: 'SANKETA',
-        debugShowCheckedModeBanner: false,
-        theme: sanketaDarkTheme(),
-        home: RemoteScope(controller: _controller, child: const RemoteScreen()),
-      );
+  Widget build(BuildContext context) => RemoteScope(
+    controller: _controller,
+    child: MaterialApp(
+      title: 'Sanketa',
+      debugShowCheckedModeBanner: false,
+      theme: sanketaDarkTheme(),
+      home: const AppShell(),
+    ),
+  );
 }

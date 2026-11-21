@@ -42,8 +42,8 @@ void main() {
 
   group('NEC', () {
     test('carrier, header, length, and a repeat frame', () {
-      final s = codec.encode(
-          const IrCommand(protocol: IrProtocol.nec, address: 0x04, command: 0x08));
+      final s = codec.encode(const IrCommand(
+          protocol: IrProtocol.nec, address: 0x04, command: 0x08));
       expect(s.carrierHz, 38000);
       expect(s.pattern.take(2).toList(), [9000, 4500]);
       expect(s.pattern.length, 67); // 2 header + 32*2 + 1 stop
@@ -53,8 +53,8 @@ void main() {
 
     test('encodes address, ~address, command, ~command (LSB first)', () {
       const addr = 0x04, cmd = 0x08;
-      final s = codec.encode(
-          const IrCommand(protocol: IrProtocol.nec, address: addr, command: cmd));
+      final s = codec.encode(const IrCommand(
+          protocol: IrProtocol.nec, address: addr, command: cmd));
       final bytes = _decodePulseDistance(s.pattern, 4);
       expect(bytes[0], addr);
       expect(bytes[1], (~addr) & 0xFF);
@@ -76,8 +76,8 @@ void main() {
   group('Samsung', () {
     test('equal 4500/4500 header and customer-code-twice framing', () {
       const addr = 0x07, cmd = 0x02;
-      final s = codec.encode(
-          const IrCommand(protocol: IrProtocol.samsung, address: addr, command: cmd));
+      final s = codec.encode(const IrCommand(
+          protocol: IrProtocol.samsung, address: addr, command: cmd));
       expect(s.carrierHz, 38000);
       expect(s.pattern.take(2).toList(), [4500, 4500]);
       final bytes = _decodePulseDistance(s.pattern, 4);
@@ -85,6 +85,7 @@ void main() {
       expect(bytes[1], addr); // repeated, not complemented
       expect(bytes[2], cmd);
       expect(bytes[3], (~cmd) & 0xFF);
+      expect(s.repeatFrame, s.pattern);
     });
   });
 
@@ -114,8 +115,8 @@ void main() {
 
   group('RC5', () {
     test('36 kHz, all half-bit multiples, invariant total on-air time', () {
-      final s = codec.encode(
-          const IrCommand(protocol: IrProtocol.rc5, address: 0x05, command: 0x35));
+      final s = codec.encode(const IrCommand(
+          protocol: IrProtocol.rc5, address: 0x05, command: 0x35));
       expect(s.carrierHz, 36000);
       for (final d in s.pattern) {
         expect(d % 889, 0, reason: 'every RC5 duration is a multiple of 889µs');
@@ -143,11 +144,35 @@ void main() {
       expect(s.pattern, [900, 900, 450, 1350]);
     });
 
-    test('carrier override on a real protocol keeps timings, swaps carrier', () {
+    test('carrier override on a real protocol keeps timings, swaps carrier',
+        () {
       final s = codec.encode(const IrCommand(
-          protocol: IrProtocol.nec, address: 1, command: 2, carrierHzOverride: 56000));
+          protocol: IrProtocol.nec,
+          address: 1,
+          command: 2,
+          carrierHzOverride: 56000));
       expect(s.carrierHz, 56000);
       expect(s.pattern.take(2).toList(), [9000, 4500]); // timings unchanged
+    });
+
+    test('rejects invalid raw signals and carrier overrides', () {
+      expect(
+        () => codec.encode(const IrCommand(protocol: IrProtocol.raw)),
+        throwsArgumentError,
+      );
+      expect(
+        () => codec.encode(const IrCommand(
+            protocol: IrProtocol.raw, raw: [900, 0], carrierHzOverride: 38000)),
+        throwsArgumentError,
+      );
+      expect(
+        () => codec.encode(const IrCommand(
+            protocol: IrProtocol.nec,
+            address: 1,
+            command: 2,
+            carrierHzOverride: 0)),
+        throwsArgumentError,
+      );
     });
   });
 }

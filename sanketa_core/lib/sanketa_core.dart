@@ -7,13 +7,19 @@
 library sanketa_core;
 
 export 'src/adapter/control_adapter.dart';
+export 'src/cast/cast_session.dart';
+export 'src/cast/media_caster.dart';
+export 'src/debloat/debloat.dart';
 export 'src/discovery/device_registry.dart';
 export 'src/discovery/discovered_endpoint.dart';
 export 'src/discovery/discovery_backend.dart';
 export 'src/discovery/discovery_engine.dart';
 export 'src/discovery/endpoint_classifier.dart';
+export 'src/iptv/iptv.dart';
 export 'src/model/capabilities.dart';
 export 'src/model/device.dart';
 export 'src/model/keys.dart';
 export 'src/model/pairing.dart';
 export 'src/model/text.dart';
+export 'src/session/session_manager.dart';
+export 'src/session/session_state.dart';
