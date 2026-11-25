@@ -21,7 +21,7 @@ import '../model/text.dart';
 /// One interface, every brand. Implementations exist for Android TV, Tizen,
 /// webOS, Roku, BRAVIA (MVP), then Fire TV, Vizio, Panasonic, Philips, Hisense,
 /// TCL, generic DLNA, IR, and the BroadLink bridge (Phase 2).
-abstract interface class ControlAdapter {
+abstract class ControlAdapter {
   // --- Metadata -------------------------------------------------------------
 
   /// Stable adapter identifier (e.g. `roku`, `android_tv`). Not user-facing.
@@ -85,4 +85,18 @@ abstract interface class ControlAdapter {
   /// `capabilities().stateReadback = false` so the UI makes no state claims
   /// (PRD FR-3.4).
   Stream<StateDelta> readState();
+
+  // --- Readback queries (FR-3.4) -------------------------------------------
+
+  /// Query current volume (0–100). Returns null if unsupported or offline.
+  Future<int?> getVolume() async => null;
+
+  /// Query mute state. Returns null if unsupported.
+  Future<bool?> getMuted() async => null;
+
+  /// Query power state. Returns null if unsupported.
+  Future<PowerState?> getPowerState() async => null;
+
+  /// Query currently active app. Returns null if unsupported.
+  Future<AppRef?> getCurrentApp() async => null;
 }

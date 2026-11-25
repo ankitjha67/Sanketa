@@ -1,4 +1,4 @@
-/// Hisense VIDAA TV adapter over MQTT.
+﻿/// Hisense VIDAA TV adapter over MQTT.
 ///
 /// Hisense VIDAA smart TVs expose an MQTT broker on port 36669 (plain TCP) or
 /// 36670 (TLS). Commands travel as JSON payloads published to topic paths
@@ -23,7 +23,7 @@ import 'dart:typed_data';
 
 import 'package:sanketa_core/sanketa_core.dart';
 
-class HisenseAdapter implements ControlAdapter {
+class HisenseAdapter extends ControlAdapter {
   HisenseAdapter({
     required String host,
     int port = 36669,
@@ -258,6 +258,15 @@ class HisenseAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   void close() {
     _socketSub?.cancel();

@@ -17,7 +17,7 @@ import 'package:sanketa_core/sanketa_core.dart';
 const _avTransport = 'urn:schemas-upnp-org:service:AVTransport:1';
 const _renderingControl = 'urn:schemas-upnp-org:service:RenderingControl:1';
 
-class DlnaAdapter implements ControlAdapter, MediaCaster {
+class DlnaAdapter extends ControlAdapter implements MediaCaster {
   DlnaAdapter({
     required Uri avTransportControlUrl,
     required Uri renderingControlUrl,
@@ -126,6 +126,15 @@ class DlnaAdapter implements ControlAdapter, MediaCaster {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   /// Cast a media URL to the renderer (SetAVTransportURI + Play). The entry
   /// point the casting engine (FR-7.1) uses.

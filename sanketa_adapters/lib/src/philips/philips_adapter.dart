@@ -1,4 +1,4 @@
-/// Philips TV adapter over JointSpace REST API.
+﻿/// Philips TV adapter over JointSpace REST API.
 ///
 /// JointSpace is a REST surface on port 1925 (HTTP, API v5/v6) or 1926
 /// (HTTPS with digest auth on 2016+ models). Key presses travel as POST to
@@ -14,7 +14,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:sanketa_core/sanketa_core.dart';
 
-class PhilipsAdapter implements ControlAdapter {
+class PhilipsAdapter extends ControlAdapter {
   PhilipsAdapter({
     required String host,
     int port = 1925,
@@ -96,7 +96,7 @@ class PhilipsAdapter implements ControlAdapter {
         volumeReadback: true,
         appLaunch: true,
         inputList: false,
-        stateReadback: false,
+        stateReadback: true,
       );
 
   @override
@@ -212,6 +212,43 @@ class PhilipsAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async {
+    try {
+      final res = await _client.get(_uri('/audio/volume'), headers: _headers);
+      if (res.statusCode != 200) return null;
+      final json = _tryDecode(res.body);
+      return (json?['current'] as num?)?.toInt();
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool?> getMuted() async {
+    try {
+      final res = await _client.get(_uri('/audio/volume'), headers: _headers);
+      if (res.statusCode != 200) return null;
+      final json = _tryDecode(res.body);
+      return json?['muted'] as bool?;
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<PowerState?> getPowerState() async {
+    try {
+      final res = await _client.get(_uri('/powerstate'), headers: _headers);
+      if (res.statusCode != 200) return null;
+      final json = _tryDecode(res.body);
+      final state = json?['powerstate'] as String?;
+      return state == 'On' ? PowerState.on : PowerState.standby;
+    } on Object {
+      return null;
+    }
+  }
 
   void close() => _client.close();
 

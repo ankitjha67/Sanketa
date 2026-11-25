@@ -4,7 +4,7 @@ import 'package:sanketa_core/sanketa_core.dart';
 /// the screen can show a live "sent to TV" log, and reports full capabilities so
 /// every control renders. Swapping in a real adapter (Roku, Android TV, IR, …)
 /// changes nothing above this contract — that is the whole point of the design.
-class DemoAdapter implements ControlAdapter {
+class DemoAdapter extends ControlAdapter {
   DemoAdapter(this.onAction);
 
   final void Function(String action) onAction;

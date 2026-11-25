@@ -1,4 +1,4 @@
-/// IrControlAdapter — puts infrared behind the same [ControlAdapter] contract as
+﻿/// IrControlAdapter — puts infrared behind the same [ControlAdapter] contract as
 /// every network brand. To the rest of the app, an IR TV is just another target
 /// with a capability map; the only differences it sees are `Transport.infrared`,
 /// `textMode: none` (→ D-pad assist, FR-4.4), and no state readback (IR is
@@ -18,7 +18,7 @@ import 'ir_codeset.dart';
 import 'ir_signal.dart';
 import 'ir_transmitter.dart';
 
-class IrControlAdapter implements ControlAdapter {
+class IrControlAdapter extends ControlAdapter {
   IrControlAdapter({
     required IrCodeset codeset,
     required IrTransmitter transmitter,
@@ -131,6 +131,15 @@ class IrControlAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   /// Cancel any in-flight held keys. Call when the device is deselected.
   void dispose() => _cancelAllHolds();

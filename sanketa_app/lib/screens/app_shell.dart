@@ -8,6 +8,7 @@ import 'cast_screen.dart';
 import 'devices_screen.dart';
 import 'remote_screen.dart';
 import 'search_screen.dart';
+import 'simple_remote_screen.dart';
 import 'tools_screen.dart';
 
 class AppShell extends StatefulWidget {
@@ -58,12 +59,14 @@ class _AppShellState extends State<AppShell> {
         body: SafeArea(
           child: IndexedStack(
             index: c.navIndex,
-            children: const [
-              RemoteScreen(),
-              SearchScreen(),
-              CastScreen(),
-              ToolsScreen(),
-              DevicesScreen(),
+            children: [
+              c.isSimpleMode
+                  ? const SimpleRemoteScreen()
+                  : const RemoteScreen(),
+              const SearchScreen(),
+              const CastScreen(),
+              const ToolsScreen(),
+              const DevicesScreen(),
             ],
           ),
         ),

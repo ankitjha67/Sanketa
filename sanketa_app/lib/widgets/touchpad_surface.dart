@@ -106,7 +106,9 @@ class _TouchpadSurfaceState extends State<TouchpadSurface> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          GestureDetector(
+          Semantics(
+            label: 'Touchpad. Swipe to navigate, tap for OK, double-tap for Back, long-press for Menu',
+            child: GestureDetector(
             onPanStart: _onPanStart,
             onPanUpdate: _onPanUpdate,
             onPanEnd: _onPanEnd,
@@ -145,6 +147,7 @@ class _TouchpadSurfaceState extends State<TouchpadSurface> {
                 ],
               ),
             ),
+          ),
           ),
         ],
       ),

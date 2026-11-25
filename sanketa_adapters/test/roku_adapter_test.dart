@@ -128,7 +128,7 @@ void main() {
     expect(caps.canType, isTrue);
     expect(caps.appLaunch, isTrue);
     expect(caps.volumeReadback, isFalse);
-    expect(caps.stateReadback, isFalse);
+    expect(caps.stateReadback, isTrue);
     expect(caps.supports(Key.ok), isTrue);
     expect(caps.supports(Key.digit5), isFalse);
   });

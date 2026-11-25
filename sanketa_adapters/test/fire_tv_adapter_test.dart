@@ -21,7 +21,7 @@ void main() {
     expect(caps.supports(Key.volumeUp), isTrue);
     expect(caps.textMode, TextInjectionMode.live);
     expect(caps.appLaunch, isTrue);
-    expect(caps.wake, isTrue);
+    expect(caps.wake, isFalse);
   });
 
   test('discoveryHints include amzn-wplay mDNS and ATVRS ports', () {

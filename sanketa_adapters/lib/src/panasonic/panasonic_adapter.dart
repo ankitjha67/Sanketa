@@ -1,4 +1,4 @@
-/// Panasonic Viera adapter over the SOAP / HTTP control protocol.
+﻿/// Panasonic Viera adapter over the SOAP / HTTP control protocol.
 ///
 /// Viera TVs (2012+) expose a SOAP endpoint on port 55000. Key presses
 /// travel as X_SendKey commands, volume as X_GetVolume/X_SetVolume, and app
@@ -9,7 +9,7 @@ library;
 import 'package:http/http.dart' as http;
 import 'package:sanketa_core/sanketa_core.dart';
 
-class PanasonicAdapter implements ControlAdapter {
+class PanasonicAdapter extends ControlAdapter {
   PanasonicAdapter({
     required String host,
     int port = 55000,
@@ -187,6 +187,15 @@ class PanasonicAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   void close() => _client.close();
 

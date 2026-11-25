@@ -1,4 +1,4 @@
-/// Roku control adapter over ECP (External Control Protocol).
+﻿/// Roku control adapter over ECP (External Control Protocol).
 ///
 /// ECP is a stateless REST surface on port 8060 with no authentication (a
 /// device-side setting can restrict it; we confirm reachability at pair time).
@@ -20,7 +20,7 @@ library;
 import 'package:http/http.dart' as http;
 import 'package:sanketa_core/sanketa_core.dart';
 
-class RokuAdapter implements ControlAdapter {
+class RokuAdapter extends ControlAdapter {
   RokuAdapter({required String host, int port = 8060, http.Client? client})
       : _base = 'http://$host:$port',
         _client = client ?? http.Client();
@@ -99,7 +99,7 @@ class RokuAdapter implements ControlAdapter {
         volumeReadback: false, // ECP does not report volume level
         appLaunch: true,
         inputList: false, // not enumerable via ECP; UI uses a static list
-        stateReadback: false, // no push channel
+        stateReadback: true, // power + active app via ECP query
       );
 
   // --- Lifecycle -------------------------------------------------------------
@@ -195,6 +195,34 @@ class RokuAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<PowerState?> getPowerState() async {
+    try {
+      final res = await _client.get(_uri('/query/device-info'));
+      if (res.statusCode != 200) return null;
+      final match =
+          RegExp(r'<power-mode>(\w+)</power-mode>').firstMatch(res.body);
+      if (match == null) return null;
+      return match.group(1) == 'PowerOn' ? PowerState.on : PowerState.standby;
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<AppRef?> getCurrentApp() async {
+    try {
+      final res = await _client.get(_uri('/query/active-app'));
+      if (res.statusCode != 200) return null;
+      final match =
+          RegExp(r'<app\s[^>]*id="([^"]*)"[^>]*>([^<]*)</app>').firstMatch(res.body);
+      if (match == null) return null;
+      return AppRef(id: match.group(1)!, name: match.group(2)!);
+    } on Object {
+      return null;
+    }
+  }
 
   /// Release the underlying HTTP client. Call when the device is forgotten.
   void close() => _client.close();

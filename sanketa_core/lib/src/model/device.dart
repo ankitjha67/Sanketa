@@ -83,3 +83,12 @@ class StateDelta {
   final AppRef? currentApp;
   final PowerState? power;
 }
+
+/// Snapshot of known TV state from readback queries (FR-3.4).
+class TvState {
+  const TvState({this.volume, this.muted, this.power, this.currentApp});
+  final int? volume;
+  final bool? muted;
+  final PowerState? power;
+  final AppRef? currentApp;
+}

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:sanketa_core/sanketa_core.dart';
 import 'package:test/test.dart';
@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 /// A minimal [ControlAdapter] for session-manager tests. Reports connection
 /// state via callbacks so tests can control when connect/heartbeat succeed or
 /// fail.
-class _FakeAdapter implements ControlAdapter {
+class _FakeAdapter extends ControlAdapter {
   bool connectShouldFail = false;
   bool heartbeatAlive = true;
   Completer<void>? connectGate;
@@ -72,6 +72,15 @@ class _FakeAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 }
 
 const _device = Device(

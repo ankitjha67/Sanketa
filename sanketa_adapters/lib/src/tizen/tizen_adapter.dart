@@ -1,4 +1,4 @@
-/// Samsung Tizen adapter (2016+) — JSON over WebSocket on 8001/8002.
+﻿/// Samsung Tizen adapter (2016+) — JSON over WebSocket on 8001/8002.
 ///
 /// Keys travel as `ms.remote.control` / `SendRemoteKey` frames; live text as
 /// `SendInputString` (base64). Pairing is token-based: the TV shows an allow
@@ -51,7 +51,7 @@ const Map<Key, String> _tizenKeys = {
   Key.digit9: 'KEY_9',
 };
 
-class TizenAdapter implements ControlAdapter {
+class TizenAdapter extends ControlAdapter {
   TizenAdapter({required WsChannel channel}) : _ch = channel;
 
   final WsChannel _ch;
@@ -194,6 +194,15 @@ class TizenAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   String _keyFrame(String keyName, String cmd) => jsonEncode({
         'method': 'ms.remote.control',

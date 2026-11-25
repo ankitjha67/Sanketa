@@ -1,4 +1,4 @@
-/// AndroidTvAdapter — Android TV / Google TV remote protocol v2 behind the
+﻿/// AndroidTvAdapter — Android TV / Google TV remote protocol v2 behind the
 /// [ControlAdapter] contract. This is the keyboard-hero platform (live text
 /// injection) and, under OD-2 India-first, the dominant one.
 ///
@@ -20,7 +20,7 @@ import 'atv_keymap.dart';
 import 'atv_messages.dart';
 import 'protobuf_codec.dart';
 
-class AndroidTvAdapter implements ControlAdapter {
+class AndroidTvAdapter extends ControlAdapter {
   AndroidTvAdapter({required AtvChannel channel}) : _channel = channel;
 
   final AtvChannel _channel;
@@ -179,6 +179,15 @@ class AndroidTvAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   void _subscribeToMessages() {
     _messageSub?.cancel();

@@ -30,7 +30,9 @@ void main() {
   });
 
   test('sendKey(ok) sends a Click SendRemoteKey with KEY_ENTER', () async {
-    final ch = FakeWsChannel();
+    final ch = FakeWsChannel(emitAfterConnect: const [
+      '{"event":"ms.channel.connect","data":{"token":"test"}}',
+    ]);
     final adapter = TizenAdapter(channel: ch);
     await adapter.connect();
     await adapter.sendKey(Key.ok);
@@ -41,7 +43,9 @@ void main() {
   });
 
   test('hold maps to Press then Release', () async {
-    final ch = FakeWsChannel();
+    final ch = FakeWsChannel(emitAfterConnect: const [
+      '{"event":"ms.channel.connect","data":{"token":"test"}}',
+    ]);
     final adapter = TizenAdapter(channel: ch);
     await adapter.connect();
     await adapter.sendKey(Key.volumeUp, press: PressType.holdStart);
@@ -51,7 +55,9 @@ void main() {
   });
 
   test('text insert sends SendInputString with base64', () async {
-    final ch = FakeWsChannel();
+    final ch = FakeWsChannel(emitAfterConnect: const [
+      '{"event":"ms.channel.connect","data":{"token":"test"}}',
+    ]);
     final adapter = TizenAdapter(channel: ch);
     await adapter.connect();
     await adapter.sendText(const TextOp.insert('hi'));
@@ -61,7 +67,9 @@ void main() {
   });
 
   test('unsupported key fails, nothing sent', () async {
-    final ch = FakeWsChannel();
+    final ch = FakeWsChannel(emitAfterConnect: const [
+      '{"event":"ms.channel.connect","data":{"token":"test"}}',
+    ]);
     final adapter = TizenAdapter(channel: ch);
     await adapter.connect();
     final res = await adapter.sendKey(Key.assistant);

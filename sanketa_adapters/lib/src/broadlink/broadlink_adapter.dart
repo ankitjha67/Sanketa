@@ -1,4 +1,4 @@
-/// BroadLink WiFi-IR bridge adapter — puts a BroadLink RM behind the same
+﻿/// BroadLink WiFi-IR bridge adapter — puts a BroadLink RM behind the same
 /// [ControlAdapter] contract as every other brand. Transport is [Transport.bridge].
 ///
 /// The adapter composes [IrControlAdapter] for the actual command logic (codeset
@@ -15,7 +15,7 @@ import 'package:sanketa_ir/sanketa_ir.dart';
 import 'broadlink_protocol.dart';
 import 'broadlink_transmitter.dart';
 
-class BroadLinkAdapter implements ControlAdapter {
+class BroadLinkAdapter extends ControlAdapter {
   BroadLinkAdapter({
     required BroadLinkDevice device,
     required IrCodeset codeset,
@@ -132,6 +132,15 @@ class BroadLinkAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   /// Access the bridge transmitter for IR learning flows.
   BroadLinkTransmitter? get bridgeTransmitter => _tx;

@@ -1,4 +1,4 @@
-/// Vizio SmartCast adapter — JSON over HTTPS on port 7345/9000.
+﻿/// Vizio SmartCast adapter — JSON over HTTPS on port 7345/9000.
 ///
 /// SmartCast exposes a REST API: keys travel as PUT /key_command with
 /// CODESET/CODE pairs, volume as GET/PUT /menu_native/dynamic/tv_settings/audio,
@@ -40,7 +40,7 @@ const Map<Key, (int codeset, int code)> _vizioKeys = {
   Key.info: (4, 6),
 };
 
-class VizioAdapter implements ControlAdapter {
+class VizioAdapter extends ControlAdapter {
   VizioAdapter({
     required String host,
     int port = 7345,
@@ -78,7 +78,7 @@ class VizioAdapter implements ControlAdapter {
         appLaunch: true,
         inputList: true,
         volumeReadback: true,
-        stateReadback: false,
+        stateReadback: true,
       );
 
   @override
@@ -205,6 +205,52 @@ class VizioAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async {
+    try {
+      final res =
+          await _get('/menu_native/dynamic/tv_settings/audio/volume');
+      if (res.statusCode != 200) return null;
+      final json = _tryDecode(res.body);
+      final items = json?['ITEMS'] as List?;
+      if (items == null || items.isEmpty) return null;
+      return ((items.first as Map)['VALUE'] as num?)?.toInt();
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool?> getMuted() async {
+    try {
+      final res =
+          await _get('/menu_native/dynamic/tv_settings/audio/mute');
+      if (res.statusCode != 200) return null;
+      final json = _tryDecode(res.body);
+      final items = json?['ITEMS'] as List?;
+      if (items == null || items.isEmpty) return null;
+      final val = (items.first as Map)['VALUE'] as String?;
+      return val == 'On';
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<PowerState?> getPowerState() async {
+    try {
+      final res = await _get('/state/device/power_mode');
+      if (res.statusCode != 200) return null;
+      final json = _tryDecode(res.body);
+      final items = json?['ITEMS'] as List?;
+      if (items == null || items.isEmpty) return null;
+      final val = ((items.first as Map)['VALUE'] as num?)?.toInt();
+      return val == 1 ? PowerState.on : PowerState.standby;
+    } on Object {
+      return null;
+    }
+  }
 
   Future<CommandResult> _keyCommand(int codeset, int code) async {
     final sw = Stopwatch()..start();

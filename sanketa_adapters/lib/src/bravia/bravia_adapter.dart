@@ -1,4 +1,4 @@
-/// Sony BRAVIA (classic IP-control era) adapter — IRCC-IP over SOAP plus a REST
+﻿/// Sony BRAVIA (classic IP-control era) adapter — IRCC-IP over SOAP plus a REST
 /// text form, authenticated with a pre-shared key (PSK). Modern Android-TV-era
 /// BRAVIA sets route through the Android TV adapter instead (per §11).
 ///
@@ -42,7 +42,7 @@ const Map<Key, String> _ircc = {
   Key.digit0: 'AAAAAQAAAAEAAAAJAw==',
 };
 
-class BraviaAdapter implements ControlAdapter {
+class BraviaAdapter extends ControlAdapter {
   BraviaAdapter({
     required String host,
     int port = 80,
@@ -205,6 +205,15 @@ class BraviaAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   // Minimal JSON string escaper for the text payload (never logged elsewhere).
   String _jsonString(String s) {

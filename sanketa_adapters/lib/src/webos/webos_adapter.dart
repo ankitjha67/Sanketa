@@ -1,4 +1,4 @@
-/// LG webOS adapter — SSAP JSON over WebSocket on 3000/3001.
+﻿/// LG webOS adapter — SSAP JSON over WebSocket on 3000/3001.
 ///
 /// Two message shapes: SSAP `request` frames (volume, mute, power-off, IME text,
 /// app launch) and pointer-socket `button` frames (D-pad, OK, Back, Home, media).
@@ -48,7 +48,7 @@ const Map<Key, String> _webosSsapKeys = {
   Key.volumeDown: 'ssap://audio/volumeDown',
 };
 
-class WebosAdapter implements ControlAdapter {
+class WebosAdapter extends ControlAdapter {
   WebosAdapter({required WsChannel channel}) : _ch = channel;
 
   final WsChannel _ch;
@@ -81,8 +81,8 @@ class WebosAdapter implements ControlAdapter {
         wake: false, // WoL not yet implemented
         appLaunch: true,
         inputList: false,
-        volumeReadback: false,
-        stateReadback: false,
+        volumeReadback: true,
+        stateReadback: true,
       );
 
   @override
@@ -177,6 +177,57 @@ class WebosAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async {
+    try {
+      final resp = await _ssapRequest('ssap://audio/getVolume');
+      return resp?['volume'] as int?;
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool?> getMuted() async {
+    try {
+      final resp = await _ssapRequest('ssap://audio/getVolume');
+      return resp?['muted'] as bool?;
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<PowerState?> getPowerState() async =>
+      _ch.isOpen ? PowerState.on : PowerState.standby;
+
+  @override
+  Future<AppRef?> getCurrentApp() async {
+    try {
+      final resp = await _ssapRequest(
+          'ssap://com.webos.applicationManager/getForegroundAppInfo');
+      final appId = resp?['appId'] as String?;
+      if (appId == null || appId.isEmpty) return null;
+      return AppRef(id: appId, name: resp?['appName'] as String? ?? appId);
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _ssapRequest(String uri) async {
+    if (!_ch.isOpen) return null;
+    final reqId = 'query_${_id++}';
+    _ch.send(jsonEncode({'type': 'request', 'id': reqId, 'uri': uri}));
+    await for (final raw in _ch.messages) {
+      final data = jsonDecode(raw) as Map<String, dynamic>?;
+      if (data == null) continue;
+      if (data['id'] == reqId) {
+        return data['payload'] as Map<String, dynamic>?;
+      }
+    }
+    return null;
+  }
 
   String _ssapFrame(String uri, [Map<String, Object?>? payload]) => jsonEncode({
         'type': 'request',

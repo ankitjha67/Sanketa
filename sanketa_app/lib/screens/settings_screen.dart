@@ -2,12 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/diagnostics_service.dart';
 import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  void _exportDiagnostics(BuildContext context, RemoteController c) async {
+    final caps = <String, bool>{};
+    final capMap = c.caps;
+    caps['D-pad'] = capMap.supports(core.Key.up);
+    caps['Volume'] = capMap.supports(core.Key.volumeUp);
+    caps['Power'] = capMap.supports(core.Key.power);
+    caps['Apps'] = capMap.appLaunch;
+    caps['Keyboard'] = capMap.canType;
+    caps['Source'] = capMap.inputList;
+
+    final report = await DiagnosticsService.generateReport(
+      appVersion: 'v0.1.0',
+      isConnected: c.isConnected,
+      deviceName: c.deviceName.isNotEmpty ? c.deviceName : null,
+      adapterId: c.adapter.id,
+      transport: c.adapter.transport,
+      host: c.selectedDevice?.device.host,
+      capabilities: caps,
+      actionLog: c.actionLog,
+      connectionError: c.connectionError,
+    );
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text('Saved to ${report.filePath}',
+            style: gfont(AppType.bodySm, color: hex(AppColors.onSurface))),
+        backgroundColor: hex(AppColors.surfaceContainerHigh),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +82,13 @@ class SettingsScreen extends StatelessWidget {
                             value: c.autoReconnect,
                             onChanged: (_) => c.toggleAutoReconnect(),
                           ),
+                          _toggleTile(
+                            Icons.accessibility_new,
+                            'Simple Mode',
+                            subtitle: '6 large buttons — Power, Vol, Ch, Mute',
+                            value: c.isSimpleMode,
+                            onChanged: (_) => c.toggleSimpleMode(),
+                          ),
                         ]),
                         const SizedBox(height: AppSpacing.lg),
                         _settingsGroup('IR BLASTER', [
@@ -76,6 +118,18 @@ class SettingsScreen extends StatelessWidget {
                         _settingsGroup('ABOUT', [
                           _settingTile(Icons.info_outline, 'Sanketa v0.1.0',
                               subtitle: 'Universal TV Remote'),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _exportDiagnostics(context, c),
+                            child: _settingTile(
+                              Icons.bug_report_outlined,
+                              'Export Diagnostics',
+                              subtitle: 'Save a debug report to share',
+                              trailing: Icon(Icons.chevron_right,
+                                  size: 20,
+                                  color: hex(AppColors.onSurfaceVariant)),
+                            ),
+                          ),
                         ]),
                         const SizedBox(height: AppSpacing.xl),
                       ],

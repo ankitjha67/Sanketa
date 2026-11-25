@@ -242,10 +242,11 @@ Additionally in `live_atv_channel.dart`:
 
 ---
 
-### C2 · No liveness supervision / reconnect after connection drops
+### C2 · No liveness supervision / reconnect after connection drops — **PARTIALLY FIXED**
 
 | Field | Value |
 |---|---|
+| **Status** | **Step 1 done:** `SessionManager` built in `sanketa_app/lib/control/session_manager.dart` and wired into `RemoteController` — exponential backoff (1s→2s→4s→8s→max 30s + 20% jitter), JSON persistence of last device, auto-reconnect on connection failure when `autoReconnect` is true. Remaining: real heartbeat per protocol (step 2), `AppLifecycleState` observer (step 3), disconnect callback from channels (step 4). |
 | **Evidence** | 📄 `remote_controller.dart:187,696-698` (autoReconnect dead); `session_manager.dart` (tested but never used); no `heartbeat()` calls anywhere in app |
 | **Affects** | All TVs |
 | **Root cause** | (a) `autoReconnect` toggle is written and read in the settings UI but **never consumed** — no code path reads it to decide reconnection behavior. (b) `SessionManager` in `sanketa_core/src/session/` implements connect→heartbeat→backoff→reconnect but is **never instantiated** by the app. (c) `heartbeat()` is never called — `AndroidTvAdapter.heartbeat` just writes an unsolicited ping response (not a real liveness test). (d) `isConnected` is only set `false` at `remote_controller.dart:328,424,430` — a silent TCP drop leaves it `true` forever. (e) No `AppLifecycleState` observer → app resume after screen-off doesn't reconnect. |

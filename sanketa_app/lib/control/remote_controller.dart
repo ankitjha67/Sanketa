@@ -20,7 +20,12 @@ import 'demo_adapter.dart';
 import 'ir_device_service.dart';
 import 'macro_service.dart';
 import 'parental_control_service.dart';
+import 'permission_service.dart';
+import 'preferences_service.dart';
+import 'room_service.dart';
+import 'session_manager.dart';
 import 'sleep_timer_service.dart';
+import 'state_readback.dart';
 import 'voice_control_service.dart';
 
 enum ScanState { idle, scanning, done }
@@ -97,6 +102,11 @@ class RemoteController extends ChangeNotifier {
     unawaited(voiceControl.checkAvailability());
     unawaited(refreshIrHardware());
     unawaited(_initializeIrDatabase());
+    sessionManager.onReconnect = (d) => selectDevice(d, clearOverride: false);
+    unawaited(sessionManager.load());
+    unawaited(preferences.load());
+    unawaited(roomService.load());
+    unawaited(permissions.check());
   }
 
   late core.ControlAdapter _adapter;
@@ -113,6 +123,11 @@ class RemoteController extends ChangeNotifier {
   final CustomLayoutService layoutService = CustomLayoutService();
   final ParentalControlService parentalControls = ParentalControlService();
   final VoiceControlService voiceControl = VoiceControlService();
+  final SessionManager sessionManager = SessionManager();
+  final PreferencesService preferences = PreferencesService();
+  final RoomService roomService = RoomService();
+  final StateReadbackService stateReadback = StateReadbackService();
+  final PermissionService permissions = PermissionService();
 
   // Per-device ATVRS certificate (generated at first launch, persisted).
   static String? _cachedCertPem;
@@ -195,6 +210,8 @@ class RemoteController extends ChangeNotifier {
   bool isMuted = false;
   bool isPoweredOn = true;
   int tvVolume = -1;
+  core.TvState _tvState = const core.TvState();
+  core.TvState get tvState => _tvState;
   StreamSubscription<core.StateDelta>? _stateSub;
   ScanState scanState = ScanState.idle;
   List<core.DiscoveredDevice> discoveredDevices = [];
@@ -218,6 +235,13 @@ class RemoteController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get isSimpleMode => preferences.isSimpleMode;
+
+  void toggleSimpleMode() {
+    preferences.toggleSimpleMode();
+    notifyListeners();
+  }
+
   // --- Sleep timer -----------------------------------------------------------
   VoidCallback? showSleepTimerSheet;
 
@@ -231,70 +255,70 @@ class RemoteController extends ChangeNotifier {
   /// Tracked here so we can read negotiatedFeatures for the settings UI.
   adapters.AtvChannel? _liveAtvChannel;
 
-  /// Auto-detected feature map: feature name → detection source description.
+  final Map<String, String> _verifiedCapabilities = {};
+
   Map<String, String> get detectedFeatures {
+    final caps = _adapter.capabilities();
     final map = <String, String>{};
-    final adapterId = _adapter.id;
+
+    if (caps.keys.isNotEmpty) {
+      map['D-pad / Keys'] =
+          _verifiedCapabilities['keys'] ?? 'Declared';
+    }
+    if (caps.canType) {
+      map['Keyboard'] =
+          _verifiedCapabilities['keyboard'] ?? 'Declared';
+    }
+    if (caps.supports(core.Key.volumeUp)) {
+      map['Volume'] =
+          _verifiedCapabilities['volume'] ?? 'Declared';
+    }
+    if (caps.appLaunch) {
+      map['App Launch'] =
+          _verifiedCapabilities['appLaunch'] ?? 'Declared';
+    }
+    if (caps.stateReadback) {
+      map['State Readback'] =
+          _verifiedCapabilities['stateReadback'] ?? 'Declared';
+    }
+
+    if (_adapter.id == 'android_tv' || _adapter.id == 'fire_tv') {
+      final f = _liveAtvChannel?.negotiatedFeatures ?? 0;
+      if (f > 0) map['Features'] = 'Negotiated with TV';
+    }
+
+    return map;
+  }
+
+  Future<void> _verifyCapabilities() async {
+    _verifiedCapabilities.clear();
     final caps = _adapter.capabilities();
 
-    if (adapterId == 'android_tv' || adapterId == 'fire_tv') {
-      final f = _liveAtvChannel?.negotiatedFeatures ?? 0;
-      if (f > 0) {
-        map['D-pad / Keys'] =
-            (f & 2 != 0) ? 'ATVRS handshake (bit 2)' : 'Not reported';
-        map['Keyboard (IME)'] =
-            (f & 4 != 0) ? 'ATVRS handshake (bit 4)' : 'Not reported';
-        map['Volume'] =
-            (f & 64 != 0) ? 'ATVRS handshake (bit 64)' : 'Not reported';
-        map['Power'] =
-            (f & 32 != 0) ? 'ATVRS handshake (bit 32)' : 'Not reported';
-        map['App Launch'] =
-            (f & 512 != 0) ? 'ATVRS handshake (bit 512)' : 'Not reported';
-        map['Ping/Keepalive'] =
-            (f & 1 != 0) ? 'ATVRS handshake (bit 1)' : 'Not reported';
-        map['Features'] = 'Negotiated with TV';
-      } else {
-        map['Status'] = 'Waiting for handshake...';
-      }
-    } else if (adapterId == 'tizen') {
-      map['D-pad / Keys'] = 'Tizen WebSocket (SendRemoteKey)';
-      map['Keyboard'] = 'Tizen WebSocket (SendInputString)';
-      map['Volume'] = 'Tizen key codes (KEY_VOLUP/DOWN)';
-      map['Power'] = 'Tizen key codes (KEY_POWER)';
-      map['Wake'] = 'WoWLAN (native)';
-    } else if (adapterId == 'webos') {
-      map['D-pad / Keys'] = 'webOS WebSocket API';
-      map['Volume'] = 'webOS ssap://audio/*';
-      map['App Launch'] = 'webOS ssap://system.launcher/*';
-    } else if (adapterId == 'bravia_simple_ip' || adapterId == 'bravia') {
-      map['D-pad / Keys'] = 'Simple IP (port 20060)';
-      map['Volume'] = 'Simple IP readback';
-      map['Keyboard'] = _atvrs?.isConnected == true
-          ? 'ATVRS sidecar (port 6466)'
-          : 'Requires ATVRS pairing';
-      map['State Readback'] = 'Simple IP volume/power stream';
-    } else if (adapterId == 'roku') {
-      map['D-pad / Keys'] = 'Roku ECP (port 8060)';
-      map['App Launch'] = 'Roku ECP /launch/{appId}';
-      map['Keyboard'] = 'Roku ECP /keypress/Lit_*';
-    } else if (adapterId == 'hisense') {
-      map['D-pad / Keys'] = 'Hisense VIDAA MQTT (sendkey)';
-      map['Volume'] = 'Hisense VIDAA MQTT (volume)';
-      map['App Launch'] = 'Hisense VIDAA MQTT (launchapp)';
-    } else if (adapterId == 'dlna') {
-      map['Volume'] = 'UPnP RenderingControl';
-      map['Media Casting'] = 'UPnP AVTransport';
-    } else {
-      for (final entry in {
-        'D-pad': caps.keys.isNotEmpty,
-        'Keyboard': caps.canType,
-        'Volume': caps.supports(core.Key.volumeUp),
-        'App Launch': caps.appLaunch,
-      }.entries) {
-        map[entry.key] = entry.value ? 'Protocol default' : 'Not available';
+    if (caps.keys.isNotEmpty) {
+      try {
+        final r = await _adapter.heartbeat();
+        if (r) _verifiedCapabilities['keys'] = 'Confirmed';
+      } on Object {
+        // Leave as declared.
       }
     }
-    return map;
+
+    if (caps.canType) {
+      _verifiedCapabilities['keyboard'] = 'Confirmed (protocol)';
+    }
+
+    if (caps.stateReadback) {
+      _verifiedCapabilities['stateReadback'] = 'Confirmed';
+      _verifiedCapabilities['volume'] = 'Confirmed (readback)';
+    } else if (caps.supports(core.Key.volumeUp)) {
+      _verifiedCapabilities['volume'] = 'Confirmed (key only)';
+    }
+
+    if (caps.appLaunch) {
+      _verifiedCapabilities['appLaunch'] = 'Confirmed (protocol)';
+    }
+
+    notifyListeners();
   }
 
   // --- Casting state (FR-7.1) -----------------------------------------------
@@ -367,6 +391,8 @@ class RemoteController extends ChangeNotifier {
 
   void selectDevice(core.DiscoveredDevice d, {bool clearOverride = true}) {
     if (clearOverride) forcedAdapterId = null;
+    sessionManager.cancelReconnect();
+    sessionManager.markConnecting();
     deviceName = _shortDeviceName(d.device.displayName);
     _selectedDevice = d;
     connectionError = null;
@@ -408,6 +434,7 @@ class RemoteController extends ChangeNotifier {
       }
       isConnected = true;
       connectionError = null;
+      unawaited(sessionManager.saveDevice(d));
 
       // For BRAVIA, _atvrs provides the keyboard channel alongside SimpleIP.
       // For non-BRAVIA ATVRS adapters, the adapter's own channel handles
@@ -449,6 +476,18 @@ class RemoteController extends ChangeNotifier {
         });
       }
 
+      stateReadback.attach(
+        next.id,
+        next.readState(),
+        reportsState: next.capabilities().stateReadback,
+      );
+
+      // Initial state poll (FR-3.4) — query real values from the TV.
+      unawaited(pollState());
+
+      // Verify capabilities against the live connection (U4 fix).
+      unawaited(_verifyCapabilities());
+
       // Probe all reachable protocols in the background for the settings page.
       if (forcedAdapterId == null) {
         unawaited(probeProtocols());
@@ -470,12 +509,14 @@ class RemoteController extends ChangeNotifier {
         debugPrint('[SANKETA] Connection StateError (${d.adapterId}): $e');
         isConnected = false;
         connectionError = _humanConnectionError(e.message, d);
+        if (autoReconnect) sessionManager.scheduleReconnect();
       }
     } on Object catch (e, st) {
       if (!_disposed && generation == _connectionGeneration) {
         debugPrint('[SANKETA] Connection error (${d.adapterId}): $e\n$st');
         isConnected = false;
         connectionError = _humanConnectionError('$e', d);
+        if (autoReconnect) sessionManager.scheduleReconnect();
       }
     } finally {
       if (!_disposed && generation == _connectionGeneration) {
@@ -686,6 +727,48 @@ class RemoteController extends ChangeNotifier {
 
   void _onAtvrsDisconnect() {
     if (!_disposed) notifyListeners();
+  }
+
+  /// Query the TV for real state values (FR-3.4). Updates [tvState] and the
+  /// legacy [tvVolume]/[isMuted]/[isPoweredOn] fields used by the UI.
+  Future<void> pollState() async {
+    if (!isConnected) return;
+    final caps = _adapter.capabilities();
+
+    int? vol;
+    bool? muted;
+    core.PowerState? power;
+    core.AppRef? app;
+
+    if (caps.volumeReadback) {
+      vol = await _adapter.getVolume();
+      muted = await _adapter.getMuted();
+    }
+    if (caps.stateReadback) {
+      power = await _adapter.getPowerState();
+      app = await _adapter.getCurrentApp();
+    }
+
+    _tvState = core.TvState(
+        volume: vol, muted: muted, power: power, currentApp: app);
+
+    var changed = false;
+    if (vol != null && vol != tvVolume) {
+      tvVolume = vol;
+      changed = true;
+    }
+    if (muted != null && muted != isMuted) {
+      isMuted = muted;
+      changed = true;
+    }
+    if (power != null) {
+      final on = power == core.PowerState.on;
+      if (on != isPoweredOn) {
+        isPoweredOn = on;
+        changed = true;
+      }
+    }
+    if (changed) notifyListeners();
   }
 
   /// Probe all protocols reachable on the connected device's IP.
@@ -926,11 +1009,12 @@ class RemoteController extends ChangeNotifier {
     }
   }
 
-  void addManualDevice(String host) {
+  void addManualDevice(String host, {int? port, String? name}) {
     final endpoint = core.DiscoveredEndpoint(
       source: core.DiscoverySource.manual,
       host: host,
-      friendlyName: host,
+      port: port,
+      friendlyName: name ?? host,
     );
     _engine.registry.ingest(endpoint);
     notifyListeners();
@@ -947,12 +1031,23 @@ class RemoteController extends ChangeNotifier {
     if (parentalControls.isKeyBlocked(k)) return;
     debugPrint('[SANKETA] key pressed: ${k.name} press=$press');
     if (hapticEnabled) HapticFeedback.lightImpact();
+    final caps = _adapter.capabilities();
     if (k == core.Key.mute) {
       isMuted = !isMuted;
+      notifyListeners();
+    } else if (k == core.Key.volumeUp && tvVolume >= 0) {
+      tvVolume = (tvVolume + 1).clamp(0, 100);
+      notifyListeners();
+    } else if (k == core.Key.volumeDown && tvVolume >= 0) {
+      tvVolume = (tvVolume - 1).clamp(0, 100);
       notifyListeners();
     }
     macroService.recordStep('key', argument: k.name);
     unawaited(_sendCommand(_adapter.sendKey(k, press: press)));
+    if (caps.volumeReadback &&
+        (k == core.Key.volumeUp || k == core.Key.volumeDown || k == core.Key.mute)) {
+      Future<void>.delayed(const Duration(milliseconds: 500), pollState);
+    }
   }
 
   Future<void> _sendCommand(
@@ -1022,8 +1117,10 @@ class RemoteController extends ChangeNotifier {
 
   void power(bool on) {
     if (hapticEnabled) HapticFeedback.mediumImpact();
-    isPoweredOn = on;
-    notifyListeners();
+    if (!_adapter.capabilities().stateReadback) {
+      isPoweredOn = on;
+      notifyListeners();
+    }
     unawaited(_sendCommand(_adapter.power(on: on)));
   }
 
@@ -1790,6 +1887,8 @@ class RemoteController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     ++_connectionGeneration;
+    sessionManager.cancelReconnect();
+    sessionManager.dispose();
     sleepTimer.dispose();
     macroService.dispose();
     layoutService.dispose();
@@ -1804,9 +1903,13 @@ class RemoteController extends ChangeNotifier {
     unawaited(_hlsServer?.stop());
     unawaited(_mirrorBridge.stopMirror());
     _stateSub?.cancel();
+    stateReadback.detach();
     unawaited(_deviceSub?.cancel());
     unawaited(_adapter.disconnect().catchError((Object _) {}));
     unawaited(_engine.registry.dispose());
+    stateReadback.dispose();
+    roomService.dispose();
+    permissions.dispose();
     super.dispose();
   }
 

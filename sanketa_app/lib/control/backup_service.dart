@@ -41,6 +41,7 @@ class BackupService extends ChangeNotifier {
     'custom_layouts.json',
     'usage.json',
     'parental.json',
+    'session.json',
   ];
 
   // ── backup list management ──────────────────────────────────

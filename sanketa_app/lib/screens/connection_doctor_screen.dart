@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/diagnostics_service.dart';
 import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
@@ -232,6 +233,10 @@ class _ConnectionDoctorScreenState extends State<ConnectionDoctorScreen> {
                         const SizedBox(height: AppSpacing.lg),
                         _remedyCard(),
                       ],
+                      if (_done) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        _exportButton(context),
+                      ],
                     ],
                   ),
                 ),
@@ -432,6 +437,74 @@ class _ConnectionDoctorScreenState extends State<ConnectionDoctorScreen> {
           ),
         ),
       );
+
+  Widget _exportButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final c = RemoteScope.of(context);
+        final checkResults = <String, String>{};
+        for (final ch in _checks) {
+          checkResults[ch.label] = '${ch.status.name}: ${ch.detail}';
+        }
+        final caps = <String, bool>{};
+        final capMap = c.caps;
+        caps['D-pad'] = capMap.supports(core.Key.up);
+        caps['Volume'] = capMap.supports(core.Key.volumeUp);
+        caps['Power'] = capMap.supports(core.Key.power);
+        caps['Apps'] = capMap.appLaunch;
+        caps['Keyboard'] = capMap.canType;
+        caps['Source'] = capMap.inputList;
+
+        final report = await DiagnosticsService.generateReport(
+          appVersion: 'v0.1.0',
+          isConnected: c.isConnected,
+          deviceName: c.deviceName.isNotEmpty ? c.deviceName : null,
+          adapterId: c.adapter.id,
+          transport: c.adapter.transport,
+          host: c.selectedDevice?.device.host,
+          capabilities: caps,
+          actionLog: c.actionLog,
+          connectionError: c.connectionError,
+          checkResults: checkResults,
+        );
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Saved to ${report.filePath}',
+                style:
+                    gfont(AppType.bodySm, color: hex(AppColors.onSurface))),
+            backgroundColor: hex(AppColors.surfaceContainerHigh),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ));
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: hex(AppColors.surfaceContainerHigh),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(
+              color: hex(AppColors.outlineVariant).withValues(alpha: 0.3)),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bug_report_outlined,
+                  size: 18, color: hex(AppColors.onSurfaceVariant)),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Export Diagnostics',
+                  style: gfont(AppType.bodyMd,
+                      color: hex(AppColors.onSurface),
+                      weight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _remedyCard() {
     final remedies = _checks

@@ -1,4 +1,4 @@
-/// SwitchBot Hub WiFi-IR bridge adapter — CLOUD-ONLY, opt-in.
+﻿/// SwitchBot Hub WiFi-IR bridge adapter — CLOUD-ONLY, opt-in.
 ///
 /// SwitchBot has NO local LAN API. All commands route through
 /// `api.switch-bot.com` with HMAC-SHA256 auth. This CONFLICTS with the
@@ -36,7 +36,7 @@ class SwitchBotConfig {
   final String deviceId;
 }
 
-class SwitchBotAdapter implements ControlAdapter {
+class SwitchBotAdapter extends ControlAdapter {
   SwitchBotAdapter({
     required SwitchBotConfig config,
     required IrCodeset codeset,
@@ -135,6 +135,15 @@ class SwitchBotAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => const Stream<StateDelta>.empty();
+
+  @override
+  Future<int?> getVolume() async => null;
+  @override
+  Future<bool?> getMuted() async => null;
+  @override
+  Future<PowerState?> getPowerState() async => null;
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   Future<CommandResult> _sendIr(IrSignal signal) async {
     final sw = Stopwatch()..start();

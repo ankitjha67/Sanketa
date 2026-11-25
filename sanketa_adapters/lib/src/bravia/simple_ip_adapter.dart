@@ -1,4 +1,4 @@
-/// Sony BRAVIA Simple IP Control adapter — TCP text protocol on port 20060.
+﻿/// Sony BRAVIA Simple IP Control adapter — TCP text protocol on port 20060.
 ///
 /// Used by newer BRAVIA models (2024+ Google TV era, e.g. BRAVIA 2 II / BF1)
 /// that dropped the classic IRCC-IP/REST API (port 80) in favour of Simple IP.
@@ -71,7 +71,7 @@ const Map<Key, int> _irccCodes = {
   Key.audioTrack: 99,
 };
 
-class SimpleIpAdapter implements ControlAdapter {
+class SimpleIpAdapter extends ControlAdapter {
   SimpleIpAdapter({
     required this.host,
     this.port = 20060,
@@ -334,6 +334,25 @@ class SimpleIpAdapter implements ControlAdapter {
       await Future<void>.delayed(const Duration(seconds: 3));
     }
   }
+
+  @override
+  Future<int?> getVolume() => _enquiry('VOLU');
+
+  @override
+  Future<bool?> getMuted() async {
+    final val = await _enquiry('AMUT');
+    return val == null ? null : val != 0;
+  }
+
+  @override
+  Future<PowerState?> getPowerState() async {
+    final val = await _enquiry('POWR');
+    if (val == null) return null;
+    return val == 1 ? PowerState.on : PowerState.standby;
+  }
+
+  @override
+  Future<AppRef?> getCurrentApp() async => null;
 
   // ---------------------------------------------------------------------------
 

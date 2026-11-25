@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/haptic_service.dart';
 import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import 'common.dart';
+import 'honesty_banner.dart';
 
 /// The grounded tactile remote: power/source/mute, D-pad, functions, rockers,
 /// and app shortcuts. Capability-driven — each control maps to a contract call.
@@ -25,6 +27,10 @@ class RemotePad extends StatelessWidget {
         _functions(c),
         const SizedBox(height: AppSpacing.md),
         _rockers(c),
+        HonestyBanner(
+          label: 'Volume and mute are best-effort — this TV does not confirm changes.',
+          reportsState: c.caps.volumeReadback,
+        ),
         const SizedBox(height: AppSpacing.sm),
         _apps(c),
       ]),
@@ -41,6 +47,7 @@ class RemotePad extends StatelessWidget {
                 ? hex(AppColors.signalEmerald).withValues(alpha: 0.4)
                 : hex(AppColors.error).withValues(alpha: 0.4),
             onTap: () => c.power(!c.isPoweredOn),
+            semanticLabel: c.isPoweredOn ? 'Power off' : 'Power on',
           ),
           if (c.caps.inputList) _sourceToggle(c),
           _roundButton(
@@ -50,6 +57,7 @@ class RemotePad extends StatelessWidget {
                 ? hex(AppColors.error).withValues(alpha: 0.4)
                 : hex(AppColors.outlineVariant).withValues(alpha: 0.3),
             onTap: () => c.key(core.Key.mute),
+            semanticLabel: c.isMuted ? 'Unmute' : 'Mute',
           ),
         ],
       );
@@ -89,36 +97,51 @@ class RemotePad extends StatelessWidget {
     required Color color,
     required Color borderColor,
     required VoidCallback onTap,
+    String? semanticLabel,
   }) =>
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: hex(AppColors.surfaceContainerHigh),
-            shape: BoxShape.circle,
-            border: Border.all(color: borderColor),
+      Semantics(
+        label: semanticLabel,
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticService.instance.confirm();
+            onTap();
+          },
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: hex(AppColors.surfaceContainerHigh),
+              shape: BoxShape.circle,
+              border: Border.all(color: borderColor),
+            ),
+            child: Icon(icon, size: 20, color: color),
           ),
-          child: Icon(icon, size: 20, color: color),
         ),
       );
 
   Widget _dpad(RemoteController c) {
-    Widget arrow(IconData icon, Alignment align, VoidCallback onTap) => Align(
+    Widget arrow(IconData icon, Alignment align, VoidCallback onTap, String label) => Align(
           alignment: align,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: Container(
-              width: align == Alignment.topCenter || align == Alignment.bottomCenter ? 56 : 46,
-              height: align == Alignment.topCenter || align == Alignment.bottomCenter ? 46 : 56,
-              decoration: BoxDecoration(
-                color: hex(AppColors.surfaceContainer),
-                borderRadius: BorderRadius.circular(AppRadii.lg),
+          child: Semantics(
+            label: label,
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticService.instance.tap();
+                onTap();
+              },
+              child: Container(
+                width: align == Alignment.topCenter || align == Alignment.bottomCenter ? 56 : 48,
+                height: align == Alignment.topCenter || align == Alignment.bottomCenter ? 48 : 56,
+                decoration: BoxDecoration(
+                  color: hex(AppColors.surfaceContainer),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                ),
+                child: Icon(icon, size: 22, color: hex(AppColors.onSurface)),
               ),
-              child: Icon(icon, size: 22, color: hex(AppColors.onSurface)),
             ),
           ),
         );
@@ -139,28 +162,35 @@ class RemotePad extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(6),
             child: Stack(children: [
-              arrow(Icons.keyboard_arrow_up, Alignment.topCenter, () => c.key(core.Key.up)),
-              arrow(Icons.keyboard_arrow_down, Alignment.bottomCenter, () => c.key(core.Key.down)),
-              arrow(Icons.keyboard_arrow_left, Alignment.centerLeft, () => c.key(core.Key.left)),
-              arrow(Icons.keyboard_arrow_right, Alignment.centerRight, () => c.key(core.Key.right)),
+              arrow(Icons.keyboard_arrow_up, Alignment.topCenter, () => c.key(core.Key.up), 'Up'),
+              arrow(Icons.keyboard_arrow_down, Alignment.bottomCenter, () => c.key(core.Key.down), 'Down'),
+              arrow(Icons.keyboard_arrow_left, Alignment.centerLeft, () => c.key(core.Key.left), 'Left'),
+              arrow(Icons.keyboard_arrow_right, Alignment.centerRight, () => c.key(core.Key.right), 'Right'),
             ]),
           ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => c.key(core.Key.ok),
-            child: Container(
-              width: 80,
-              height: 80,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: hex(AppColors.surfaceContainerHigh),
-                shape: BoxShape.circle,
-                border: Border.all(color: hex(AppColors.primaryContainer).withValues(alpha: 0.6)),
-                boxShadow: outerShadows(AppElevation.dpadCenterGlow),
+          Semantics(
+            label: 'OK',
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticService.instance.confirm();
+                c.key(core.Key.ok);
+              },
+              child: Container(
+                width: 80,
+                height: 80,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: hex(AppColors.surfaceContainerHigh),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: hex(AppColors.primaryContainer).withValues(alpha: 0.6)),
+                  boxShadow: outerShadows(AppElevation.dpadCenterGlow),
+                ),
+                child: Text('OK',
+                    style: gfont(AppType.headlineMd,
+                        color: hex(AppColors.primaryContainer), size: 14, weight: FontWeight.w700)),
               ),
-              child: Text('OK',
-                  style: gfont(AppType.headlineMd,
-                      color: hex(AppColors.primaryContainer), size: 14, weight: FontWeight.w700)),
             ),
           ),
         ],
@@ -179,18 +209,25 @@ class RemotePad extends StatelessWidget {
       );
 
   Widget _funcButton(IconData icon, String label, VoidCallback onTap) => Expanded(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Container(
-            height: 40,
-            alignment: Alignment.center,
-            decoration: panel(fill: AppColors.surfaceContainer, radius: AppRadii.md),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(icon, size: 16, color: hex(AppColors.onSurfaceVariant)),
-              const SizedBox(width: 4),
-              Text(label, style: gfont(AppType.bodySm, color: hex(AppColors.onSurface), weight: FontWeight.w500)),
-            ]),
+        child: Semantics(
+          label: label,
+          button: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticService.instance.tap();
+              onTap();
+            },
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: panel(fill: AppColors.surfaceContainer, radius: AppRadii.md),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(icon, size: 16, color: hex(AppColors.onSurfaceVariant)),
+                const SizedBox(width: 4),
+                Text(label, style: gfont(AppType.bodySm, color: hex(AppColors.onSurface), weight: FontWeight.w500)),
+              ]),
+            ),
           ),
         ),
       );
@@ -205,24 +242,31 @@ class RemotePad extends StatelessWidget {
   }
 
   Widget _rocker(String label, VoidCallback onUp, VoidCallback onDown) {
-    Widget half(IconData icon, VoidCallback onTap, {required bool top}) => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Container(
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: hex(AppColors.surfaceContainer),
-              borderRadius: BorderRadius.vertical(
-                top: top ? const Radius.circular(AppRadii.base) : Radius.zero,
-                bottom: top ? Radius.zero : const Radius.circular(AppRadii.base),
+    Widget half(IconData icon, VoidCallback onTap, {required bool top}) => Semantics(
+          label: '${top ? "Increase" : "Decrease"} $label',
+          button: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticService.instance.tap();
+              onTap();
+            },
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: hex(AppColors.surfaceContainer),
+                borderRadius: BorderRadius.vertical(
+                  top: top ? const Radius.circular(AppRadii.base) : Radius.zero,
+                  bottom: top ? Radius.zero : const Radius.circular(AppRadii.base),
+                ),
               ),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                if (!top) Text(label, style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 9)),
+                Icon(icon, size: 18, color: hex(AppColors.onSurface)),
+                if (top) Text(label, style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 9)),
+              ]),
             ),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (!top) Text(label, style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 9)),
-              Icon(icon, size: 18, color: hex(AppColors.onSurface)),
-              if (top) Text(label, style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 9)),
-            ]),
           ),
         );
 
@@ -239,15 +283,19 @@ class RemotePad extends StatelessWidget {
 
   Widget _apps(RemoteController c) {
     Widget app(String label, int color) => Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => c.launch(label),
-            child: Container(
-              height: 40,
-              alignment: Alignment.center,
-              decoration: panel(fill: AppColors.surfaceContainer, radius: AppRadii.base),
-              child: Text(label,
-                  style: gfont(AppType.bodySm, color: hex(color), weight: FontWeight.w800, size: 11)),
+          child: Semantics(
+            label: 'Launch $label',
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => c.launch(label),
+              child: Container(
+                height: 48,
+                alignment: Alignment.center,
+                decoration: panel(fill: AppColors.surfaceContainer, radius: AppRadii.base),
+                child: Text(label,
+                    style: gfont(AppType.bodySm, color: hex(color), weight: FontWeight.w800, size: 11)),
+              ),
             ),
           ),
         );

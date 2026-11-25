@@ -1,4 +1,4 @@
-/// Amazon Fire TV adapter — Android TV remote with Fire-specific keys.
+﻿/// Amazon Fire TV adapter — Android TV remote with Fire-specific keys.
 ///
 /// Fire TV runs Fire OS (a fork of Android), so the underlying protocol is
 /// Android TV Remote Service (ATVRS) on port 6466/6467. This thin wrapper
@@ -11,7 +11,7 @@ import 'package:sanketa_core/sanketa_core.dart';
 import '../android_tv/android_tv_adapter.dart';
 import '../android_tv/atv_channel.dart';
 
-class FireTvAdapter implements ControlAdapter {
+class FireTvAdapter extends ControlAdapter {
   FireTvAdapter({required AtvChannel channel})
       : _inner = AndroidTvAdapter(channel: channel);
 
@@ -76,4 +76,13 @@ class FireTvAdapter implements ControlAdapter {
 
   @override
   Stream<StateDelta> readState() => _inner.readState();
+
+  @override
+  Future<int?> getVolume() => _inner.getVolume();
+  @override
+  Future<bool?> getMuted() => _inner.getMuted();
+  @override
+  Future<PowerState?> getPowerState() => _inner.getPowerState();
+  @override
+  Future<AppRef?> getCurrentApp() => _inner.getCurrentApp();
 }

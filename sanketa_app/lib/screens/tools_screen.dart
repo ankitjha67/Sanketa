@@ -13,6 +13,7 @@ import 'macro_screen.dart';
 import 'multi_room_screen.dart';
 import 'network_diagnostics_screen.dart';
 import 'parental_controls_screen.dart';
+import 'rooms_screen.dart';
 import 'screen_mirror_screen.dart';
 import 'search_shortcuts_screen.dart';
 import 'touchpad_screen.dart';
@@ -167,6 +168,13 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Send URLs to TV',
                     color: AppColors.error,
                     onTap: () => _push(context, const VideoHandoffScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.meeting_room_rounded,
+                    title: 'Rooms',
+                    subtitle: 'Organize by room',
+                    color: AppColors.primaryContainer,
+                    onTap: () => _push(context, const RoomsScreen()),
                   ),
                 ],
               ),

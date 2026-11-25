@@ -7,6 +7,7 @@ import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 import '../widgets/ir_setup_wizard.dart';
 import 'app_launcher_screen.dart';
+import 'manual_add_screen.dart';
 import 'debloat_screen.dart';
 import 'performance_screen.dart';
 import 'settings_screen.dart';
@@ -1027,7 +1028,15 @@ class _DevicesScreenState extends State<DevicesScreen> {
   Widget _addDeviceButton(BuildContext context, RemoteController c) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _showAddDeviceDialog(context, c),
+      onTap: () {
+        final ctrl = RemoteScope.of(context);
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => RemoteScope(
+            controller: ctrl,
+            child: const ManualAddScreen(),
+          ),
+        ));
+      },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -1061,69 +1070,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
     );
   }
 
-  void _showAddDeviceDialog(BuildContext context, RemoteController c) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: hex(AppColors.surfaceContainerHigh),
-        title: Text(
-          'Add Device by IP',
-          style: gfont(
-            AppType.headlineMd,
-            color: hex(AppColors.onSurface),
-            weight: FontWeight.w600,
-          ),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.url,
-          style: gfont(AppType.bodyMd, color: hex(AppColors.onSurface)),
-          decoration: InputDecoration(
-            hintText: '192.168.1.100',
-            hintStyle: gfont(AppType.bodyMd, color: hex(AppColors.outline)),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                color: hex(AppColors.outlineVariant).withValues(alpha: 0.5),
-              ),
-              borderRadius: BorderRadius.circular(AppRadii.sm),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: hex(AppColors.primaryContainer)),
-              borderRadius: BorderRadius.circular(AppRadii.sm),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: gfont(AppType.bodySm, color: hex(AppColors.outline)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              final ip = controller.text.trim();
-              if (ip.isNotEmpty) {
-                c.addManualDevice(ip);
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text(
-              'Add',
-              style: gfont(
-                AppType.bodySm,
-                color: hex(AppColors.primaryContainer),
-                weight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _PairingPinDialog extends StatefulWidget {

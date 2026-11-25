@@ -7,6 +7,7 @@ import '../control/voice_control_service.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 import '../widgets/connection_bar.dart';
+import '../widgets/honesty_banner.dart';
 import '../widgets/quick_actions_sheet.dart';
 import '../widgets/remote_pad.dart';
 import '../widgets/touchpad_surface.dart';
@@ -76,6 +77,13 @@ class _RemoteScreenState extends State<RemoteScreen> {
               child: Column(
                 children: [
                   const ConnectionBar(),
+                  ListenableBuilder(
+                    listenable: c.stateReadback,
+                    builder: (_, _) => HonestyBanner(
+                      label: c.stateReadback.honestyLabel,
+                      reportsState: c.stateReadback.adapterReportsState,
+                    ),
+                  ),
                   if (c.connectionError != null) ...[
                     const SizedBox(height: AppSpacing.sm),
                     _ErrorBanner(
@@ -174,36 +182,48 @@ class _RemoteScreenState extends State<RemoteScreen> {
                   ],
                 ),
               ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _showSleepTimerPicker,
-                child: SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Center(
-                    child: Icon(Icons.bedtime_outlined, size: 18, color: hex(AppColors.onSurfaceVariant)),
+              Semantics(
+                label: 'Sleep timer',
+                button: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _showSleepTimerPicker,
+                  child: const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: Icon(Icons.bedtime_outlined, size: 18),
+                    ),
                   ),
                 ),
               ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => showQuickActionsSheet(context),
-                child: SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Center(
-                    child: Icon(Icons.bolt, size: 18, color: hex(AppColors.onSurfaceVariant)),
+              Semantics(
+                label: 'Quick actions',
+                button: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => showQuickActionsSheet(context),
+                  child: const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: Icon(Icons.bolt, size: 18),
+                    ),
                   ),
                 ),
               ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _showVoiceSheet(context, c),
-                child: SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Center(
-                    child: Icon(Icons.mic_none, size: 18, color: hex(AppColors.onSurfaceVariant)),
+              Semantics(
+                label: 'Voice input',
+                button: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _showVoiceSheet(context, c),
+                  child: const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: Icon(Icons.mic_none, size: 18),
+                    ),
                   ),
                 ),
               ),
