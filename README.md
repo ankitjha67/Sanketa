@@ -14,8 +14,8 @@ media to the screen.
 🟢 **Phase 0 hardware validation complete on 3 TVs (Haier, Samsung BU8000, Sony BRAVIA 2 II).**
 
 - **311+ tests passing** across 7 packages, all analyzers clean
-- **10 screens**: Remote, Search, Cast, Tools, Devices, Settings + Debloat, IPTV, Performance, App Launcher
-- **12 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge
+- **17 screens**: Remote, Search, Cast, Tools, Devices, Settings + Debloat, IPTV, Performance, App Launcher, Macros, Touchpad, Connection Doctor, Custom Layouts, Search Shortcuts
+- **14 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge, Panasonic Viera, Philips JointSpace
 - **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong decrypted database)
 - **5 value-add features (F1–F5)** built, integrated, and UI-verified on device
 - **ATVRS keyboard typing** (the hero feature) fully hardware-validated: type on phone → see it on TV → submit search
@@ -36,6 +36,15 @@ media to the screen.
 | **IR Remote** | NEC/Samsung/Sony SIRC/RC5/Coolix AC encoders, D-pad assist typer | ✅ Built |
 | **Google Cast** | CastV2 TLS protocol on port 8009 | ✅ HW-validated |
 | **DLNA Casting** | UPnP AVTransport/RenderingControl with human-readable errors | ✅ HW-validated |
+| **Touchpad Mode** | Swipe→D-pad, tap→OK, double-tap→Back, long-press→Menu | ✅ Built |
+| **Macro Automation** | Record, save, and replay TV command sequences | ✅ Built |
+| **Sleep Timer** | Auto power-off with countdown, 6 presets (15m–2h) | ✅ Built |
+| **Quick Actions** | Searchable command palette: power, mute, HDMI, app launch | ✅ Built |
+| **Connection Doctor** | Guided troubleshooting: port scan, protocol probe | ✅ Built |
+| **Custom Layouts** | Drag-and-drop remote button editor, saved as JSON profiles | ✅ Built |
+| **Search Shortcuts** | Save and replay search queries across adapters | ✅ Built |
+| **Panasonic Viera** | SOAP control on port 55000, PIN pairing | ✅ Built |
+| **Philips JointSpace** | REST v6 control, Digest auth pairing | ✅ Built |
 
 ## Screenshots
 
@@ -88,6 +97,8 @@ SANKETA/
 │     ├─ iptv/           M3U parser + iptv-org catalog
 │     ├─ debloat/        Bloatware database + ADB disable
 │     ├─ switchbot/      SwitchBot Hub WiFi-IR bridge (cloud API, opt-in)
+│     ├─ panasonic/      Panasonic Viera SOAP (port 55000)
+│     ├─ philips/        Philips JointSpace REST v6 (port 1925/1926)
 │     └─ adb/            ADB command layer for tools features
 ├─ sanketa_discovery/    Real socket discovery backends
 │  └─ lib/src/           ssdp_backend · mdns_backend · probe_backend · broadlink_backend
@@ -98,12 +109,14 @@ SANKETA/
 │     ├─ assist/         D-pad shortest-path typing
 │     └─ irdb/           10,550 codesets (Flipper + Kookong)
 ├─ sanketa_design/       OmniBeam design tokens (colours · type · spacing · elevation)
-├─ sanketa_app/          Flutter app — 10 screens + app shell
+├─ sanketa_app/          Flutter app — 17 screens + app shell
 │  └─ lib/
-│     ├─ control/        RemoteController (discovery → adapter routing)
+│     ├─ control/        RemoteController, MacroService, SleepTimerService, CustomLayoutService
 │     ├─ screens/        Remote, Search, Cast, Tools, Devices, Settings,
-│     │                  Debloat, IPTV, Performance, App Launcher
-│     ├─ widgets/        TvKeyboardSheet, RemotePad, ConnectionBar
+│     │                  Debloat, IPTV, Performance, App Launcher, Macros,
+│     │                  Touchpad, Connection Doctor, Custom Layouts, Search Shortcuts
+│     ├─ widgets/        TvKeyboardSheet, RemotePad, ConnectionBar, TouchpadSurface,
+│     │                  QuickActionsSheet, SleepTimerSheet, SearchShortcutsWidget
 │     ├─ theme/          OmniBeam dark theme
 │     └─ native/         Platform channels (IR, ADB)
 └─ design/               Stitch design source

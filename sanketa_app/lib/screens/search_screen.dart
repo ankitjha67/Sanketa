@@ -52,6 +52,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   children: [
                     _searchBar(c),
                     const SizedBox(height: AppSpacing.xl),
+                    _searchShortcuts(c),
+                    const SizedBox(height: AppSpacing.xl),
                     _quickApps(c),
                     const SizedBox(height: AppSpacing.xl),
                     _recentSearches(c),
@@ -138,6 +140,73 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _searchShortcuts(RemoteController c) {
+    const shortcuts = [
+      ('Netflix', 'Netflix', Icons.play_circle_fill),
+      ('YouTube', 'YouTube', Icons.smart_display),
+      ('Prime Video', 'Prime Video', Icons.movie),
+      ('Disney+', 'Disney+', Icons.star),
+      ('Spotify', 'Spotify', Icons.music_note),
+      ('Settings', 'Settings', Icons.settings),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('SEARCH SHORTCUTS',
+            style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline))),
+        const SizedBox(height: AppSpacing.sm),
+        Text('Tap to search directly on TV',
+            style: gfont(AppType.bodySm, color: hex(AppColors.onSurfaceVariant))),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (final (label, query, icon) in shortcuts)
+              _shortcutChip(label, query, icon, c),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _shortcutChip(
+      String label, String query, IconData icon, RemoteController c) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        for (final ch in query.characters) {
+          c.type(ch);
+        }
+        c.submit();
+        c.addRecentSearch(query);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm, vertical: 6),
+        decoration: BoxDecoration(
+          color: hex(AppColors.surfaceContainerHigh).withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(AppRadii.base),
+          border: Border.all(
+              color: hex(AppColors.outlineVariant).withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: hex(AppColors.primaryContainer)),
+            const SizedBox(width: 4),
+            Text(label,
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.onSurface),
+                    weight: FontWeight.w500,
+                    size: 12)),
+          ],
+        ),
       ),
     );
   }

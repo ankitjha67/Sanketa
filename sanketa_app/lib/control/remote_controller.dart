@@ -15,8 +15,13 @@ import '../native/multicast_lock.dart';
 import '../native/platform_bridge.dart';
 import '../native/screen_mirror_bridge.dart';
 import '../native/stub_bridge.dart';
+import 'custom_layout_service.dart';
 import 'demo_adapter.dart';
 import 'ir_device_service.dart';
+import 'macro_service.dart';
+import 'parental_control_service.dart';
+import 'sleep_timer_service.dart';
+import 'voice_control_service.dart';
 
 enum ScanState { idle, scanning, done }
 
@@ -32,6 +37,8 @@ class ProtocolProbe {
     this.webos = false,
     this.tizen = false,
     this.roku = false,
+    this.panasonic = false,
+    this.philips = false,
   });
 
   final bool atvrs;
@@ -43,6 +50,8 @@ class ProtocolProbe {
   final bool webos;
   final bool tizen;
   final bool roku;
+  final bool panasonic;
+  final bool philips;
 
   List<String> get available {
     final r = <String>[];
@@ -55,6 +64,8 @@ class ProtocolProbe {
     if (tizen) r.add('tizen');
     if (roku) r.add('roku');
     if (dial) r.add('dial');
+    if (panasonic) r.add('panasonic');
+    if (philips) r.add('philips');
     return r;
   }
 }
@@ -76,6 +87,11 @@ class RemoteController extends ChangeNotifier {
       notifyListeners();
     });
     _irTransmitter = BridgeIrTransmitter(irBridge ?? StubIrBridge());
+    sleepTimer.onExpired = () => power(false);
+    unawaited(macroService.load());
+    unawaited(layoutService.load());
+    unawaited(parentalControls.load());
+    unawaited(voiceControl.checkAvailability());
     unawaited(refreshIrHardware());
     unawaited(_initializeIrDatabase());
   }
@@ -88,6 +104,12 @@ class RemoteController extends ChangeNotifier {
   late final BridgeIrTransmitter _irTransmitter;
   bool _disposed = false;
   late final IrDeviceService irService;
+
+  final SleepTimerService sleepTimer = SleepTimerService();
+  final MacroService macroService = MacroService();
+  final CustomLayoutService layoutService = CustomLayoutService();
+  final ParentalControlService parentalControls = ParentalControlService();
+  final VoiceControlService voiceControl = VoiceControlService();
 
   // Per-device ATVRS certificate (generated at first launch, persisted).
   static String? _cachedCertPem;
@@ -186,6 +208,21 @@ class RemoteController extends ChangeNotifier {
   String? forcedAdapterId;
   bool hapticEnabled = true;
   bool autoReconnect = true;
+  bool touchpadMode = false;
+
+  void toggleTouchpad() {
+    touchpadMode = !touchpadMode;
+    notifyListeners();
+  }
+
+  // --- Sleep timer -----------------------------------------------------------
+  VoidCallback? showSleepTimerSheet;
+
+  void startSleepTimer(Duration duration) {
+    sleepTimer.onExpired = () => power(false);
+    sleepTimer.start(duration);
+    notifyListeners();
+  }
 
   /// The live ATVRS channel for the current connection (if ATVRS-based).
   /// Tracked here so we can read negotiatedFeatures for the settings UI.
@@ -508,6 +545,10 @@ class RemoteController extends ChangeNotifier {
         );
         _liveAtvChannel = ch;
         return adapters.FireTvAdapter(channel: ch);
+      case 'philips':
+        return adapters.PhilipsAdapter(host: host);
+      case 'panasonic':
+        return adapters.PanasonicAdapter(host: host);
       case 'broadlink':
         // BroadLink WiFi-IR bridge. Requires a codeset (selected via the IR
         // wizard). If no codeset is active, fall through to a default.
@@ -648,6 +689,7 @@ class RemoteController extends ChangeNotifier {
     bool atvrs = false, simpleIp = false, dlna = false;
     bool googleCast = false, airplay = false, webos = false;
     bool tizen = false, roku = false;
+    bool panasonic = false, philips = false;
     final dial = _selectedDevice!.metadata['application-url'] != null;
 
     // Run TCP probes in parallel.
@@ -658,6 +700,8 @@ class RemoteController extends ChangeNotifier {
       _tcpProbe(host, 8001).then((ok) async => ok || await _tcpProbe(host, 8002)), // Tizen
       _tcpProbe(host, 8060),  // Roku ECP
       adapters.probeGoogleCast(host), // Google Cast (port 8009 TLS)
+      _tcpProbe(host, 55000), // Panasonic Viera
+      _tcpProbe(host, 1925).then((ok) async => ok || await _tcpProbe(host, 1926)), // Philips JointSpace
     ]);
 
     atvrs = results[0];
@@ -666,6 +710,8 @@ class RemoteController extends ChangeNotifier {
     tizen = results[3];
     roku = results[4];
     googleCast = results[5];
+    panasonic = results[6];
+    philips = results[7];
 
     // DLNA/UPnP probe is slightly heavier.
     final probe = adapters.UpnpProbe();
@@ -687,6 +733,8 @@ class RemoteController extends ChangeNotifier {
       webos: webos,
       tizen: tizen,
       roku: roku,
+      panasonic: panasonic,
+      philips: philips,
     );
     isProbing = false;
     notifyListeners();
@@ -884,12 +932,14 @@ class RemoteController extends ChangeNotifier {
   }
 
   void key(core.Key k, {core.PressType press = core.PressType.tap}) {
+    if (parentalControls.isKeyBlocked(k)) return;
     debugPrint('[SANKETA] key pressed: ${k.name} press=$press');
     if (hapticEnabled) HapticFeedback.lightImpact();
     if (k == core.Key.mute) {
       isMuted = !isMuted;
       notifyListeners();
     }
+    macroService.recordStep('key', argument: k.name);
     unawaited(_sendCommand(_adapter.sendKey(k, press: press)));
   }
 
@@ -1717,6 +1767,11 @@ class RemoteController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     ++_connectionGeneration;
+    sleepTimer.dispose();
+    macroService.dispose();
+    layoutService.dispose();
+    parentalControls.dispose();
+    voiceControl.dispose();
     final caster = _caster;
     if (caster is adapters.GoogleCastAdapter) {
       unawaited(caster.disconnect().catchError((Object _) {}));

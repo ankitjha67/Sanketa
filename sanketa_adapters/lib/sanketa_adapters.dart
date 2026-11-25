@@ -37,6 +37,8 @@ export 'src/fire_tv/fire_tv_adapter.dart';
 export 'src/hls/hls_proxy.dart';
 export 'src/iptv/channel_catalog.dart';
 export 'src/iptv/m3u_parser.dart';
+export 'src/panasonic/panasonic_adapter.dart';
+export 'src/philips/philips_adapter.dart';
 export 'src/roku/roku_adapter.dart';
 export 'src/switchbot/switchbot_adapter.dart';
 export 'src/tizen/tizen_adapter.dart';

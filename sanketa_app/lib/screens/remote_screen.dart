@@ -2,18 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:sanketa_design/sanketa_design.dart';
 
 import '../control/remote_controller.dart';
+import '../control/sleep_timer_service.dart';
+import '../control/voice_control_service.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 import '../widgets/connection_bar.dart';
+import '../widgets/quick_actions_sheet.dart';
 import '../widgets/remote_pad.dart';
+import '../widgets/touchpad_surface.dart';
 import '../widgets/tv_keyboard_sheet.dart';
 import 'settings_screen.dart';
 
 /// The primary remote-control surface. Lives inside [AppShell]'s IndexedStack
 /// at index 0. No longer owns a Scaffold or bottom nav — those belong to the
 /// shell.
-class RemoteScreen extends StatelessWidget {
+class RemoteScreen extends StatefulWidget {
   const RemoteScreen({super.key});
+
+  @override
+  State<RemoteScreen> createState() => _RemoteScreenState();
+}
+
+class _RemoteScreenState extends State<RemoteScreen> {
+  bool _touchpadMode = false;
+
+  void _showVoiceSheet(BuildContext context, RemoteController c) {
+    final vc = c.voiceControl;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: hex(AppColors.surface),
+      builder: (_) => _VoiceListenSheet(
+        voiceControl: vc,
+        onCommand: (cmd) {
+          if (cmd.isText) {
+            c.type(cmd.label);
+          } else {
+            for (final k in cmd.keys) {
+              c.key(k);
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  void _showSleepTimerPicker() {
+    final c = RemoteScope.of(context);
+    showModalBottomSheet<Duration>(
+      context: context,
+      backgroundColor: hex(AppColors.surface),
+      builder: (_) => _SleepTimerPicker(active: c.sleepTimer.isActive),
+    ).then((d) {
+      if (d == null) {
+        if (c.sleepTimer.isActive) c.sleepTimer.cancel();
+        return;
+      }
+      c.startSleepTimer(d);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +90,30 @@ class RemoteScreen extends StatelessWidget {
                       onDismiss: c.clearCommandError,
                     ),
                   ],
+                  ListenableBuilder(
+                    listenable: c.sleepTimer,
+                    builder: (_, _) => c.sleepTimer.isActive
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.sm),
+                            child: _SleepTimerBadge(
+                              timer: c.sleepTimer,
+                              onTap: _showSleepTimerPicker,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _ModeToggle(
+                    touchpadMode: _touchpadMode,
+                    onChanged: (v) => setState(() => _touchpadMode = v),
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   const TvKeyboardSheet(),
                   const SizedBox(height: AppSpacing.md),
-                  const RemotePad(),
+                  if (_touchpadMode)
+                    const TouchpadSurface()
+                  else
+                    const RemotePad(),
                   const SizedBox(height: AppSpacing.md),
                   const _SentReadout(),
                 ],
@@ -108,8 +174,40 @@ class RemoteScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Flexible(flex: 0, child: _pill(Icons.keyboard, 'TV Keyboard')),
-              const SizedBox(width: 4),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _showSleepTimerPicker,
+                child: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Center(
+                    child: Icon(Icons.bedtime_outlined, size: 18, color: hex(AppColors.onSurfaceVariant)),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => showQuickActionsSheet(context),
+                child: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Center(
+                    child: Icon(Icons.bolt, size: 18, color: hex(AppColors.onSurfaceVariant)),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _showVoiceSheet(context, c),
+                child: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Center(
+                    child: Icon(Icons.mic_none, size: 18, color: hex(AppColors.onSurfaceVariant)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.of(context).push(
@@ -133,19 +231,6 @@ class RemoteScreen extends StatelessWidget {
         ),
       );
 
-  Widget _pill(IconData icon, String label) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: hex(AppColors.primaryContainer).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadii.base),
-          border: Border.all(color: hex(AppColors.primaryContainer).withValues(alpha: 0.3)),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16, color: hex(AppColors.primaryContainer)),
-          const SizedBox(width: 6),
-          Text(label, style: gfont(AppType.bodySm, color: hex(AppColors.primary), weight: FontWeight.w500)),
-        ]),
-      );
 }
 
 class _ErrorBanner extends StatelessWidget {
@@ -226,6 +311,251 @@ class _SentReadout extends StatelessWidget {
           for (final a in last)
             Text(a, style: gfont(AppType.labelMonoSm, color: hex(AppColors.tertiary))),
       ]),
+    );
+  }
+}
+
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle({required this.touchpadMode, required this.onChanged});
+  final bool touchpadMode;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          _chip('D-pad', !touchpadMode, () => onChanged(false)),
+          const SizedBox(width: 8),
+          _chip('Touchpad', touchpadMode, () => onChanged(true)),
+        ],
+      );
+
+  Widget _chip(String label, bool active, VoidCallback onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: active
+                ? hex(AppColors.primaryContainer).withValues(alpha: 0.15)
+                : hex(AppColors.surfaceContainerLow),
+            borderRadius: BorderRadius.circular(AppRadii.base),
+            border: Border.all(
+              color: active
+                  ? hex(AppColors.primaryContainer).withValues(alpha: 0.5)
+                  : hex(AppColors.outlineVariant).withValues(alpha: 0.3),
+            ),
+          ),
+          child: Text(label,
+              style: gfont(AppType.bodySm,
+                  color: active ? hex(AppColors.primary) : hex(AppColors.onSurfaceVariant),
+                  weight: active ? FontWeight.w600 : FontWeight.w400,
+                  size: 12)),
+        ),
+      );
+}
+
+class _SleepTimerBadge extends StatelessWidget {
+  const _SleepTimerBadge({required this.timer, required this.onTap});
+  final SleepTimerService timer;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: hex(AppColors.tertiary).withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(color: hex(AppColors.tertiary).withValues(alpha: 0.3)),
+          ),
+          child: Row(children: [
+            Icon(Icons.bedtime, size: 16, color: hex(AppColors.tertiary)),
+            const SizedBox(width: 8),
+            Text('Sleep timer: ${timer.label}',
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.tertiary), weight: FontWeight.w500, size: 12)),
+            const Spacer(),
+            Text('Tap to change',
+                style: gfont(AppType.bodySm, color: hex(AppColors.outline), size: 10)),
+          ]),
+        ),
+      );
+}
+
+class _SleepTimerPicker extends StatelessWidget {
+  const _SleepTimerPicker({this.active = false});
+  final bool active;
+
+  static const _presets = [
+    (Duration(minutes: 15), '15 min'),
+    (Duration(minutes: 30), '30 min'),
+    (Duration(minutes: 45), '45 min'),
+    (Duration(hours: 1), '1 hour'),
+    (Duration(hours: 1, minutes: 30), '1.5 hours'),
+    (Duration(hours: 2), '2 hours'),
+  ];
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Sleep Timer',
+                  style: gfont(AppType.headlineMd,
+                      color: hex(AppColors.onSurface), size: 18, weight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text('TV will power off after the timer expires',
+                  style: gfont(AppType.bodySm, color: hex(AppColors.outline))),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _presets
+                    .map((p) => _timerChip(context, p.$1, p.$2))
+                    .toList(),
+              ),
+              if (active) ...[
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: hex(AppColors.error).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
+                      child: Center(
+                        child: Text('Cancel Timer',
+                            style: gfont(AppType.bodySm,
+                                color: hex(AppColors.error), weight: FontWeight.w600)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+
+  Widget _timerChip(BuildContext context, Duration d, String label) =>
+      GestureDetector(
+        onTap: () => Navigator.of(context).pop(d),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: hex(AppColors.surfaceContainerLow),
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(color: hex(AppColors.outlineVariant).withValues(alpha: 0.3)),
+          ),
+          child: Text(label,
+              style: gfont(AppType.bodySm,
+                  color: hex(AppColors.onSurface), weight: FontWeight.w500)),
+        ),
+      );
+}
+
+class _VoiceListenSheet extends StatefulWidget {
+  const _VoiceListenSheet({required this.voiceControl, required this.onCommand});
+  final VoiceControlService voiceControl;
+  final void Function(VoiceCommand) onCommand;
+
+  @override
+  State<_VoiceListenSheet> createState() => _VoiceListenSheetState();
+}
+
+class _VoiceListenSheetState extends State<_VoiceListenSheet> {
+  @override
+  void initState() {
+    super.initState();
+    widget.voiceControl.addListener(_onUpdate);
+    widget.voiceControl.startListening();
+  }
+
+  void _onUpdate() {
+    if (!mounted) return;
+    setState(() {});
+    final cmd = widget.voiceControl.lastCommand;
+    if (cmd != null && !widget.voiceControl.isListening) {
+      widget.onCommand(cmd);
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.voiceControl.removeListener(_onUpdate);
+    widget.voiceControl.stopListening();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vc = widget.voiceControl;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              vc.isListening ? Icons.mic : Icons.mic_off,
+              size: 48,
+              color: hex(vc.isListening
+                  ? AppColors.primaryContainer
+                  : AppColors.outlineVariant),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              vc.isListening
+                  ? 'Listening...'
+                  : vc.error ?? 'Say a command',
+              style: gfont(AppType.bodyMd,
+                  color: hex(vc.error != null
+                      ? AppColors.error
+                      : AppColors.onSurface),
+                  weight: FontWeight.w600),
+            ),
+            if (vc.transcript.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text('"${vc.transcript}"',
+                  style: gfont(AppType.bodySm,
+                      color: hex(AppColors.tertiary))),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Try: "volume up", "mute", "home", "channel up"',
+              textAlign: TextAlign.center,
+              style: gfont(AppType.bodySm,
+                  color: hex(AppColors.outline), size: 11),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (!vc.isListening && vc.error != null)
+              GestureDetector(
+                onTap: () => vc.startListening(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: hex(AppColors.primaryContainer),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Text('Try Again',
+                      style: gfont(AppType.bodySm,
+                          color: hex(AppColors.surface),
+                          weight: FontWeight.w600)),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

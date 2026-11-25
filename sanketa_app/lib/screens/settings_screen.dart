@@ -887,6 +887,14 @@ class SettingsScreen extends StatelessWidget {
         return 'Google Cast';
       case 'dial':
         return 'DIAL (App Launch Only)';
+      case 'panasonic':
+        return 'Panasonic Viera (SOAP)';
+      case 'philips':
+        return 'Philips JointSpace REST';
+      case 'broadlink':
+        return 'BroadLink WiFi-IR Bridge';
+      case 'switchbot':
+        return 'SwitchBot Hub Cloud';
       default:
         return id;
     }

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 import 'app_launcher_screen.dart';
+import 'connection_doctor_screen.dart';
+import 'custom_layout_screen.dart';
 import 'debloat_screen.dart';
+import 'macro_screen.dart';
+import 'multi_room_screen.dart';
+import 'parental_controls_screen.dart';
+import 'search_shortcuts_screen.dart';
 import 'tv_stats_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
@@ -24,7 +31,7 @@ class ToolsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 mainAxisSpacing: AppSpacing.md,
                 crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 1.05,
+                childAspectRatio: 1.1,
                 children: [
                   _ToolCard(
                     icon: Icons.cleaning_services_rounded,
@@ -46,6 +53,48 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Launch & manage TV apps',
                     color: AppColors.secondary,
                     onTap: () => _push(context, const AppLauncherScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.healing_rounded,
+                    title: 'Doctor',
+                    subtitle: 'Diagnose connections',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const ConnectionDoctorScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.play_circle_outline_rounded,
+                    title: 'Macros',
+                    subtitle: 'Automate TV routines',
+                    color: AppColors.primaryContainer,
+                    onTap: () => _push(context, const MacroScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bookmark_rounded,
+                    title: 'Shortcuts',
+                    subtitle: 'Saved search queries',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const SearchShortcutsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.dashboard_customize_rounded,
+                    title: 'Layouts',
+                    subtitle: 'Custom remote grids',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const CustomLayoutScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.shield_rounded,
+                    title: 'Parental',
+                    subtitle: 'PIN lock & key blocking',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ParentalControlsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.devices_rounded,
+                    title: 'Multi-Room',
+                    subtitle: 'Control all TVs',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const MultiRoomScreen()),
                   ),
                 ],
               ),
@@ -85,7 +134,10 @@ class ToolsScreen extends StatelessWidget {
       );
 
   void _push(BuildContext context, Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+    final c = RemoteScope.of(context);
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => RemoteScope(controller: c, child: screen),
+    ));
   }
 }
 

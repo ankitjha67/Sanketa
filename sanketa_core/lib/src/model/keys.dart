@@ -85,6 +85,10 @@ enum Key {
   acTemperatureDown,
   acFanSpeed,
 
+  // Broadcast / teletext
+  teletext,
+  source, // explicit source/input toggle (alias semantics: same as input on some platforms)
+
   // Platform-idiomatic (surfaced only where the adapter declares support)
   star, // Roku *
   instantReplay, // Roku replay
