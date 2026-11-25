@@ -37,6 +37,18 @@ media to the screen.
 | **Google Cast** | CastV2 TLS protocol on port 8009 | ✅ HW-validated |
 | **DLNA Casting** | UPnP AVTransport/RenderingControl with human-readable errors | ✅ HW-validated |
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/remote_screen.png" width="180" alt="Remote">
+  <img src="screenshots/search_screen.png" width="180" alt="Search">
+  <img src="screenshots/cast_screen.png" width="180" alt="Cast">
+  <img src="screenshots/tools_screen.png" width="180" alt="Tools">
+  <img src="screenshots/devices_screen.png" width="180" alt="Devices">
+</p>
+
+**Remote** - TV keyboard, D-pad, HDMI input switching, volume | **Search** - Quick launch streaming apps | **Cast** - Discovered devices, streaming app launchers | **Tools** - TV Debloat, TV Stats, App Launcher | **Devices** - Auto-discovered TVs with protocol icons, IR remote setup
+
 ## Hardware validation
 
 | TV | Protocol | Tested |
