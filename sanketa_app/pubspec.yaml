@@ -27,6 +27,8 @@ dependencies:
   url_launcher: ^6.3.1
   video_player: ^2.9.2
   chewie: ^1.8.5
+  encrypt: ^5.0.3
+  crypto: ^3.0.6
 
 dev_dependencies:
   flutter_test:

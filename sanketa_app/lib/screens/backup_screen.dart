@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:sanketa_design/sanketa_design.dart';
 
@@ -54,7 +55,11 @@ class _BackupScreenState extends State<BackupScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
+                      _warningBanner(),
+                      const SizedBox(height: AppSpacing.md),
                       _createBackupCard(),
+                      const SizedBox(height: AppSpacing.md),
+                      _importSection(),
                       const SizedBox(height: AppSpacing.md),
                       _whatIsBackedUp(),
                       const SizedBox(height: AppSpacing.md),
@@ -69,8 +74,36 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
+  // ── warning ─────────────────────────────────────────────────
+
+  Widget _warningBanner() => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: panel(
+          fill: AppColors.surfaceContainer,
+          borderColor: AppColors.error,
+          borderOpacity: 0.4,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.warning_amber_rounded,
+                size: 20, color: hex(AppColors.error)),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                'Your passphrase cannot be recovered. If you forget it, '
+                'the backup cannot be decrypted.',
+                style: gfont(AppType.bodySm, color: hex(AppColors.error)),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  // ── create backup ───────────────────────────────────────────
+
   Widget _createBackupCard() => GestureDetector(
-        onTap: _backup.isBusy ? null : _createBackup,
+        onTap: _backup.isBusy ? null : _showCreateDialog,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -97,19 +130,82 @@ class _BackupScreenState extends State<BackupScreen> {
                         size: 28, color: hex(AppColors.primaryContainer)),
               ),
               const SizedBox(height: AppSpacing.md),
-              Text('Create Backup',
+              Text('Create Encrypted Backup',
                   style: gfont(AppType.headlineMd,
                       color: hex(AppColors.onSurface),
                       size: 16,
                       weight: FontWeight.w600)),
               const SizedBox(height: 4),
-              Text('Save all your settings and data',
+              Text('AES-256 encrypted with your passphrase',
                   style: gfont(AppType.bodySm,
                       color: hex(AppColors.onSurfaceVariant))),
             ],
           ),
         ),
       );
+
+  // ── import from file ────────────────────────────────────────
+
+  Widget _importSection() => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: panel(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: hex(AppColors.secondary).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  child: Icon(Icons.download_rounded,
+                      size: 18, color: hex(AppColors.secondary)),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Import Backup',
+                    style: gfont(AppType.bodyMd,
+                        color: hex(AppColors.onSurface),
+                        weight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Select an encrypted .sanketa file from another device '
+              'and enter the passphrase used when it was created.',
+              style: gfont(AppType.bodySm,
+                  color: hex(AppColors.onSurfaceVariant)),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: hex(AppColors.secondary),
+                  side: BorderSide(
+                    color:
+                        hex(AppColors.outlineVariant).withValues(alpha: 0.5),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: _pickAndImport,
+                icon: Icon(Icons.folder_open_rounded,
+                    size: 18, color: hex(AppColors.secondary)),
+                label: Text('Select Backup File',
+                    style: gfont(AppType.bodyMd,
+                        color: hex(AppColors.onSurface))),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  // ── what gets backed up ─────────────────────────────────────
 
   Widget _whatIsBackedUp() => Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -126,6 +222,21 @@ class _BackupScreenState extends State<BackupScreen> {
             _dataRow(Icons.dashboard_customize, 'Custom layouts'),
             _dataRow(Icons.shield, 'Parental control settings'),
             _dataRow(Icons.bar_chart, 'Usage history'),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Icon(Icons.lock_outline,
+                    size: 14, color: hex(AppColors.signalEmerald)),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    'Pairing secrets stay in Keystore and are never exported.',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.signalEmerald), size: 10),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -142,6 +253,8 @@ class _BackupScreenState extends State<BackupScreen> {
           ],
         ),
       );
+
+  // ── saved backup list ───────────────────────────────────────
 
   Widget _backupListSection() => Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -186,15 +299,14 @@ class _BackupScreenState extends State<BackupScreen> {
                       style: gfont(AppType.bodySm,
                           color: hex(AppColors.onSurface),
                           weight: FontWeight.w500)),
-                  Text(
-                      '${_formatDate(b.created)} — ${b.sizeLabel}',
+                  Text('${_formatDate(b.created)} — ${b.sizeLabel}',
                       style: gfont(AppType.bodySm,
                           color: hex(AppColors.outline), size: 10)),
                 ],
               ),
             ),
             GestureDetector(
-              onTap: () => _restoreBackup(b),
+              onTap: () => _restoreFromList(b),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -222,6 +334,8 @@ class _BackupScreenState extends State<BackupScreen> {
         ),
       );
 
+  // ── privacy note ────────────────────────────────────────────
+
   Widget _privacyNote() => Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration:
@@ -243,23 +357,36 @@ class _BackupScreenState extends State<BackupScreen> {
         ),
       );
 
-  void _createBackup() {
-    final ctrl = TextEditingController(
-        text: 'Backup ${DateTime.now().day}/${DateTime.now().month}');
+  // ── dialogs & actions ───────────────────────────────────────
+
+  void _showCreateDialog() {
+    final passCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: hex(AppColors.surfaceContainerLow),
-        title: Text('Name your backup',
+        title: Text('Create Encrypted Backup',
             style: gfont(AppType.headlineMd,
                 color: hex(AppColors.onSurface), size: 16)),
-        content: TextField(
-          controller: ctrl,
-          style: gfont(AppType.bodySm, color: hex(AppColors.onSurface)),
-          decoration: InputDecoration(
-            hintText: 'Backup name',
-            hintStyle: gfont(AppType.bodySm,
-                color: hex(AppColors.outlineVariant)),
+        content: SizedBox(
+          width: 300,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Choose a passphrase to encrypt your backup. '
+                'You will need it to restore.',
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.onSurfaceVariant)),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _dialogField(passCtrl, 'Passphrase', obscure: true),
+              const SizedBox(height: AppSpacing.sm),
+              _dialogField(confirmCtrl, 'Confirm passphrase', obscure: true),
+            ],
           ),
         ),
         actions: [
@@ -270,9 +397,22 @@ class _BackupScreenState extends State<BackupScreen> {
           ),
           TextButton(
             onPressed: () {
+              final pass = passCtrl.text;
+              final confirm = confirmCtrl.text;
+              if (pass.isEmpty) {
+                _snack('Enter a passphrase', error: true);
+                return;
+              }
+              if (pass.length < 4) {
+                _snack('Passphrase too short (min 4 characters)', error: true);
+                return;
+              }
+              if (pass != confirm) {
+                _snack('Passphrases do not match', error: true);
+                return;
+              }
               Navigator.pop(ctx);
-              final name = ctrl.text.trim();
-              if (name.isNotEmpty) _backup.createBackup(name);
+              _doExport(pass);
             },
             child: Text('Create',
                 style: gfont(AppType.bodySm,
@@ -284,19 +424,59 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
-  void _restoreBackup(BackupEntry b) {
+  Future<void> _doExport(String passphrase) async {
+    try {
+      final path = await _backup.exportBackup(passphrase);
+      if (!mounted) return;
+      _snack('Backup created: ${path.split('/').last.split('\\').last}');
+    } on Object {
+      if (mounted) _snack('Backup failed', error: true);
+    }
+  }
+
+  Future<void> _pickAndImport() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    if (result == null || result.files.single.path == null) return;
+    final filePath = result.files.single.path!;
+
+    if (!filePath.endsWith('.sanketa')) {
+      _snack('Please select a .sanketa backup file', error: true);
+      return;
+    }
+
+    if (!mounted) return;
+    _showRestoreDialog(filePath);
+  }
+
+  void _restoreFromList(BackupEntry b) => _showRestoreDialog(b.path);
+
+  void _showRestoreDialog(String filePath) {
+    final passCtrl = TextEditingController();
+    final fileName = filePath.split('/').last.split('\\').last;
+
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: hex(AppColors.surfaceContainerLow),
-        title: Text('Restore backup?',
+        title: Text('Restore Backup',
             style: gfont(AppType.headlineMd,
                 color: hex(AppColors.onSurface), size: 16)),
-        content: Text(
-          'This will overwrite your current settings with '
-          'the data from "${b.name}". This cannot be undone.',
-          style: gfont(AppType.bodySm,
-              color: hex(AppColors.onSurfaceVariant)),
+        content: SizedBox(
+          width: 300,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter the passphrase for "$fileName". '
+                'This will overwrite your current settings.',
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.onSurfaceVariant)),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _dialogField(passCtrl, 'Passphrase', obscure: true),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -305,23 +485,62 @@ class _BackupScreenState extends State<BackupScreen> {
                 style: gfont(AppType.bodySm, color: hex(AppColors.outline))),
           ),
           TextButton(
-            onPressed: () async {
+            onPressed: () {
+              final pass = passCtrl.text;
+              if (pass.isEmpty) {
+                _snack('Enter the passphrase', error: true);
+                return;
+              }
               Navigator.pop(ctx);
-              final count = await _backup.restoreBackup(b.path);
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Restored $count file(s). Restart the app to apply.'),
-                backgroundColor: hex(AppColors.surfaceContainerHigh),
-              ));
+              _doImport(filePath, pass);
             },
             child: Text('Restore',
                 style: gfont(AppType.bodySm,
-                    color: hex(AppColors.error),
-                    weight: FontWeight.w600)),
+                    color: hex(AppColors.error), weight: FontWeight.w600)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _doImport(String filePath, String passphrase) async {
+    try {
+      final ok = await _backup.importBackup(filePath, passphrase);
+      if (!mounted) return;
+      if (ok) {
+        _snack('Backup restored — restart the app to apply');
+      } else {
+        _snack('Wrong passphrase or invalid backup', error: true);
+      }
+    } on Object {
+      if (mounted) _snack('Restore failed', error: true);
+    }
+  }
+
+  // ── helpers ─────────────────────────────────────────────────
+
+  Widget _dialogField(TextEditingController c, String hint,
+          {bool obscure = false}) =>
+      TextField(
+        controller: c,
+        obscureText: obscure,
+        style: gfont(AppType.bodySm, color: hex(AppColors.onSurface)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle:
+              gfont(AppType.bodySm, color: hex(AppColors.outlineVariant)),
+        ),
+      );
+
+  void _snack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg,
+          style: gfont(AppType.bodySm, color: hex(AppColors.onSurface))),
+      backgroundColor: error
+          ? hex(AppColors.error).withValues(alpha: 0.9)
+          : hex(AppColors.surfaceContainerHigh),
+    ));
   }
 
   String _formatDate(DateTime d) {
