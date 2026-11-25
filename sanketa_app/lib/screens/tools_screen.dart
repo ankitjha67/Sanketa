@@ -10,9 +10,13 @@ import 'custom_layout_screen.dart';
 import 'debloat_screen.dart';
 import 'macro_screen.dart';
 import 'multi_room_screen.dart';
+import 'network_diagnostics_screen.dart';
 import 'parental_controls_screen.dart';
 import 'search_shortcuts_screen.dart';
+import 'touchpad_screen.dart';
 import 'tv_stats_screen.dart';
+import 'usage_analytics_screen.dart';
+import 'voice_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -95,6 +99,34 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Control all TVs',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const MultiRoomScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.mic_rounded,
+                    title: 'Voice',
+                    subtitle: 'Speak to type on TV',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const VoiceScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.touch_app_rounded,
+                    title: 'Touchpad',
+                    subtitle: 'Full-screen touchpad',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const TouchpadScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.wifi_find_rounded,
+                    title: 'Network',
+                    subtitle: 'Diagnose connectivity',
+                    color: AppColors.primaryContainer,
+                    onTap: () => _push(context, const NetworkDiagnosticsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Usage',
+                    subtitle: 'TV usage analytics',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const UsageAnalyticsScreen()),
                   ),
                 ],
               ),
