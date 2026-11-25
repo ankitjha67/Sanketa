@@ -13,8 +13,10 @@ media to the screen.
 
 🟢 **Phase 0 hardware validation complete on 3 TVs (Haier, Samsung BU8000, Sony BRAVIA 2 II).**
 
-- **311+ tests passing** across 7 packages, all analyzers clean
-- **17 screens**: Remote, Search, Cast, Tools, Devices, Settings + Debloat, IPTV, Performance, App Launcher, Macros, Touchpad, Connection Doctor, Custom Layouts, Search Shortcuts
+- **411+ tests passing** across 7 packages, all analyzers clean
+- **64 tool cards** in the Tools grid covering remote control, diagnostics, parental, accessibility, gaming, casting, and TV management
+- **17 core screens**: Remote, Search, Cast, Tools, Devices, Settings + Debloat, IPTV, Performance, App Launcher, Macros, Touchpad, Connection Doctor, Custom Layouts, Search Shortcuts
+- **47 beyond-roadmap feature screens** across 11 batches (see Tools section below)
 - **14 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge, Panasonic Viera, Philips JointSpace
 - **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong decrypted database)
 - **5 value-add features (F1–F5)** built, integrated, and UI-verified on device
@@ -45,6 +47,26 @@ media to the screen.
 | **Search Shortcuts** | Save and replay search queries across adapters | ✅ Built |
 | **Panasonic Viera** | SOAP control on port 55000, PIN pairing | ✅ Built |
 | **Philips JointSpace** | REST v6 control, Digest auth pairing | ✅ Built |
+
+## Tools grid (64 features)
+
+The Tools screen exposes a growing grid of TV companion utilities, all built with the OmniBeam design system and wired to `RemoteScope`:
+
+| Batch | Features |
+|---|---|
+| Core | Debloat, TV Stats, App Launcher, Doctor, Macros, Touchpad, Shortcuts, Layouts, Screen Mirror, Rooms, Usage Analytics, Video Hand-off, Widgets, Wearable, Voice, Backup |
+| 1 | Favourite Channels, Gesture Shortcuts, Scheduled Actions |
+| 2 | Quick Text, HDMI Manager, Activity History, Remote Profiles |
+| 3 | Night Mode, Button Mapper, CEC Devices, Universal Search |
+| 5 | Remote Lock, Picture Settings, Sound Settings, Share Setup, Game Pad |
+| 6 | Ambient Display, Subtitle Manager, Quick Dashboard, Motion Control, Channel Guide |
+| 7 | Parental Timer, Accessibility, Remote Themes, Volume Limiter, Wake-on-LAN |
+| 8 | Quick Dial Pad, Media Info, Screen Timeout, Energy Monitor, IR Learning |
+| 9 | Sleep Sounds, Multi-TV Switcher, Input Rename, Diagnostic Log, Colour Test Patterns |
+| 10 | Child Profile, Network Info, TV App Manager, Remote Clipboard, Whistle Finder |
+| 11 | Firmware Info, Notification Manager, Speed Test, Power Schedule, Aspect Ratio |
+
+All feature screens persist settings locally as JSON, never send data off-device, and pass analysis clean.
 
 ## Screenshots
 
@@ -109,12 +131,10 @@ SANKETA/
 │     ├─ assist/         D-pad shortest-path typing
 │     └─ irdb/           10,550 codesets (Flipper + Kookong)
 ├─ sanketa_design/       OmniBeam design tokens (colours · type · spacing · elevation)
-├─ sanketa_app/          Flutter app — 17 screens + app shell
+├─ sanketa_app/          Flutter app — 64 tool cards + 6 core tabs
 │  └─ lib/
 │     ├─ control/        RemoteController, MacroService, SleepTimerService, CustomLayoutService
-│     ├─ screens/        Remote, Search, Cast, Tools, Devices, Settings,
-│     │                  Debloat, IPTV, Performance, App Launcher, Macros,
-│     │                  Touchpad, Connection Doctor, Custom Layouts, Search Shortcuts
+│     ├─ screens/        Remote, Search, Cast, Tools (64 features), Devices, Settings
 │     ├─ widgets/        TvKeyboardSheet, RemotePad, ConnectionBar, TouchpadSurface,
 │     │                  QuickActionsSheet, SleepTimerSheet, SearchShortcutsWidget
 │     ├─ theme/          OmniBeam dark theme
@@ -175,11 +195,14 @@ code (NFR-14). That contract is the moat.
 
 ## Recent changes (Nov 2026)
 
-- **ATVRS keyboard submit fix** — IME commit wire-type corrected (`writeString` not `writeUint`), HW-validated on Haier + Samsung TVs
-- **Keyboard hide blank-screen fix** — `Navigator.pop()` on embedded widget replaced with collapse/expand toggle
+- **64 tool cards** across 11 beyond-roadmap feature batches in the Tools grid
+- **411 tests passing** (core 80, adapters 228, design 12, IR 72, app 19)
+- **15 keyboard languages** including Hindi, Arabic (RTL), Korean, Japanese, Thai
+- **Native Android platform features**: permissions, share intent, AppWidget, TOFU cert store
+- **ADB reconnect storm fix**: socket cleanup, auth timeout, connect guard
+- **ATVRS keyboard submit fix** — IME commit wire-type corrected, HW-validated on 3 TVs
 - **19/24 bugs fixed** across keyboard, connection, UI, discovery, and cast tiers
 - **F1–F5 value-add features** built end-to-end with security review
-- **In-app video player** for IPTV streams (ExoPlayer via Chewie)
 - **Google Cast validated** on Sony BRAVIA (CastV2 TLS, port 8009)
 - **Production socket layer** wired for all 7 control adapters
 

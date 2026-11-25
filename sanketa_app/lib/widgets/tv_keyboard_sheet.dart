@@ -3,12 +3,12 @@ import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
 import '../control/remote_controller.dart';
+import '../services/keyboard_language_service.dart';
 import '../theme/tokens_x.dart';
 import 'common.dart';
 
 /// The hero feature (FR-4): a phone keyboard whose keystrokes stream to the TV's
-/// focused field, with a live "sent to TV" mirror. Every tap routes through the
-/// [ControlAdapter] via [RemoteController].
+/// focused field, with a live "sent to TV" mirror and multi-language support.
 class TvKeyboardSheet extends StatefulWidget {
   const TvKeyboardSheet({super.key});
 
@@ -19,9 +19,26 @@ class TvKeyboardSheet extends StatefulWidget {
 class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
   bool _pairing = false;
   bool _expanded = true;
+  bool _showLangPicker = false;
 
-  static const _rows = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
-  static const _numRows = ['1234567890', '-+*/#@&!?', '.,;:()'];
+  final _langService = KeyboardLanguageService();
+
+  @override
+  void initState() {
+    super.initState();
+    _langService.addListener(_onLangChanged);
+  }
+
+  @override
+  void dispose() {
+    _langService.removeListener(_onLangChanged);
+    _langService.dispose();
+    super.dispose();
+  }
+
+  void _onLangChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +70,10 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
             const SizedBox(height: AppSpacing.sm),
             _cursorBar(c),
             const SizedBox(height: AppSpacing.sm),
-            ..._keyboard(c),
+            if (_showLangPicker)
+              _languagePicker()
+            else
+              ..._keyboard(c),
           ],
         ],
       ),
@@ -275,16 +295,131 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
     ),
   );
 
+  // ── Language picker grid ──
+
+  Widget _languagePicker() {
+    final layouts = KeyboardLanguageService.layouts;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.language, size: 14, color: hex(AppColors.outline)),
+            const SizedBox(width: 6),
+            Text(
+              'KEYBOARD LANGUAGE',
+              style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 10),
+            ),
+            const Spacer(),
+            _tap(
+              onTap: () => setState(() => _showLangPicker = false),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.close, size: 16, color: hex(AppColors.onSurfaceVariant)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (var i = 0; i < layouts.length; i++)
+              _langChip(layouts[i], i),
+          ],
+        ),
+        const SizedBox(height: 4),
+      ],
+    );
+  }
+
+  Widget _langChip(KeyboardLayout layout, int index) {
+    final active = index == _langService.activeIndex;
+    return _tap(
+      onTap: () {
+        _langService.select(index);
+        setState(() => _showLangPicker = false);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: active
+              ? hex(AppColors.primaryContainer).withValues(alpha: 0.2)
+              : hex(AppColors.surfaceContainerHigh),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(
+            color: active
+                ? hex(AppColors.primaryContainer).withValues(alpha: 0.6)
+                : hex(AppColors.outlineVariant).withValues(alpha: 0.25),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              layout.nativeName,
+              style: gfont(
+                AppType.bodySm,
+                color: active ? hex(AppColors.primary) : hex(AppColors.onSurface),
+                weight: active ? FontWeight.w700 : FontWeight.w500,
+                size: 13,
+              ),
+            ),
+            Text(
+              layout.name,
+              style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 9),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Keyboard rows ──
+
   List<Widget> _keyboard(RemoteController c) {
-    final rows = c.numberMode ? _numRows : _rows;
+    final layout = _langService.active;
+    final isEnglish = layout.code == 'en';
+
+    if (c.numberMode) {
+      final numRows = layout.numRows;
+      return [
+        _charRow(numRows[0], c, layout),
+        const SizedBox(height: 6),
+        _charRow(numRows[1], c, layout),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(child: _charRow(numRows[2], c, layout)),
+            const SizedBox(width: 4),
+            _utilKey(
+              child: Icon(
+                Icons.backspace_outlined,
+                size: 16,
+                color: hex(AppColors.onSurfaceVariant),
+              ),
+              onTap: c.backspace,
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        _bottomRow(c, layout),
+      ];
+    }
+
+    final useShift = c.capsLock && layout.shiftRows != null;
+    final rows = useShift ? layout.shiftRows! : layout.rows;
+    final showCaps = isEnglish || layout.shiftRows != null;
+
     return [
-      _charRow(rows[0], c),
+      _charRow(rows[0], c, layout),
       const SizedBox(height: 6),
-      _charRow(rows[1], c),
+      _charRow(rows[1], c, layout),
       const SizedBox(height: 6),
       Row(
         children: [
-          if (!c.numberMode) ...[
+          if (showCaps) ...[
             _utilKey(
               child: Icon(
                 Icons.arrow_upward,
@@ -298,7 +433,7 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
             ),
             const SizedBox(width: 4),
           ],
-          Expanded(child: _charRow(rows[2], c)),
+          Expanded(child: _charRow(rows[2], c, layout)),
           const SizedBox(width: 4),
           _utilKey(
             child: Icon(
@@ -311,100 +446,139 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
         ],
       ),
       const SizedBox(height: 6),
-      Row(
-        children: [
-          _utilKey(
-            label: c.numberMode ? 'ABC' : '123',
-            onTap: c.toggleNumbers,
-            active: c.numberMode,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _tap(
-              onTap: () => c.type(' '),
-              child: Container(
-                height: 38,
-                alignment: Alignment.center,
-                decoration: panel(
-                  fill: AppColors.surfaceContainerHigh,
-                  radius: AppRadii.sm,
-                  borderOpacity: 0.2,
-                ),
-                child: Text(
-                  'space',
-                  style: gfont(AppType.bodySm, color: hex(AppColors.outline)),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          _tap(
-            onTap: c.submit,
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: hex(AppColors.primaryContainer),
-                borderRadius: BorderRadius.circular(AppRadii.sm),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.search,
-                    size: 13,
-                    color: hex(AppColors.onPrimaryContainer),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Search',
-                    style: gfont(
-                      AppType.bodySm,
-                      color: hex(AppColors.onPrimaryContainer),
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      _bottomRow(c, layout),
     ];
   }
 
-  Widget _charRow(String chars, RemoteController c) => Row(
+  Widget _bottomRow(RemoteController c, KeyboardLayout layout) => Row(
     children: [
-      for (var i = 0; i < chars.length; i++) ...[
-        if (i > 0) const SizedBox(width: 4),
-        Expanded(
-          child: _tap(
-            onTap: () => c.type(
-              c.numberMode || c.capsLock ? chars[i] : chars[i].toLowerCase(),
+      _utilKey(
+        label: c.numberMode ? 'ABC' : '123',
+        onTap: c.toggleNumbers,
+        active: c.numberMode,
+      ),
+      const SizedBox(width: 4),
+      // Language switcher button
+      _tap(
+        onTap: () => setState(() => _showLangPicker = true),
+        child: Container(
+          height: 38,
+          width: 44,
+          alignment: Alignment.center,
+          decoration: panel(
+            fill: AppColors.surfaceContainer,
+            radius: AppRadii.sm,
+            borderOpacity: 0.25,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.language, size: 14, color: hex(AppColors.onSurfaceVariant)),
+              Text(
+                layout.code.toUpperCase(),
+                style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline), size: 8),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(width: 4),
+      Expanded(
+        child: _tap(
+          onTap: () => c.type(' '),
+          child: Container(
+            height: 38,
+            alignment: Alignment.center,
+            decoration: panel(
+              fill: AppColors.surfaceContainerHigh,
+              radius: AppRadii.sm,
+              borderOpacity: 0.2,
             ),
-            child: Container(
-              height: 38,
-              alignment: Alignment.center,
-              decoration: panel(
-                fill: AppColors.surfaceContainerHigh,
-                radius: AppRadii.sm,
-                borderOpacity: 0.2,
-              ),
-              child: Text(
-                c.numberMode || c.capsLock ? chars[i] : chars[i].toLowerCase(),
-                style: gfont(
-                  AppType.bodyMd,
-                  color: hex(AppColors.onSurface),
-                  weight: FontWeight.w500,
-                ),
-              ),
+            child: Text(
+              'space',
+              style: gfont(AppType.bodySm, color: hex(AppColors.outline)),
             ),
           ),
         ),
-      ],
+      ),
+      const SizedBox(width: 4),
+      _tap(
+        onTap: c.submit,
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: hex(AppColors.primaryContainer),
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search,
+                size: 13,
+                color: hex(AppColors.onPrimaryContainer),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Search',
+                style: gfont(
+                  AppType.bodySm,
+                  color: hex(AppColors.onPrimaryContainer),
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     ],
   );
+
+  Widget _charRow(String chars, RemoteController c, KeyboardLayout layout) {
+    final isEnglish = layout.code == 'en';
+    return Directionality(
+      textDirection: layout.rtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Row(
+        children: [
+          for (var i = 0; i < chars.length; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            Expanded(
+              child: _tap(
+                onTap: () {
+                  String ch = chars[i];
+                  if (isEnglish && !c.numberMode && !c.capsLock) {
+                    ch = ch.toLowerCase();
+                  }
+                  c.type(ch);
+                },
+                child: Container(
+                  height: 38,
+                  alignment: Alignment.center,
+                  decoration: panel(
+                    fill: AppColors.surfaceContainerHigh,
+                    radius: AppRadii.sm,
+                    borderOpacity: 0.2,
+                  ),
+                  child: Text(
+                    isEnglish && !c.numberMode && !c.capsLock
+                        ? chars[i].toLowerCase()
+                        : chars[i],
+                    style: gfont(
+                      AppType.bodyMd,
+                      color: hex(AppColors.onSurface),
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _utilKey({
     String? label,

@@ -9,11 +9,57 @@ import 'backup_screen.dart';
 import 'connection_doctor_screen.dart';
 import 'custom_layout_screen.dart';
 import 'debloat_screen.dart';
+import 'activity_history_screen.dart';
+import 'favourite_channels_screen.dart';
+import 'gesture_shortcuts_screen.dart';
+import 'hdmi_manager_screen.dart';
 import 'macro_screen.dart';
 import 'multi_room_screen.dart';
 import 'network_diagnostics_screen.dart';
 import 'parental_controls_screen.dart';
+import 'quick_text_screen.dart';
+import 'remote_profiles_screen.dart';
+import 'night_mode_screen.dart';
+import 'button_mapper_screen.dart';
+import 'cec_devices_screen.dart';
+import 'universal_search_screen.dart';
+import 'remote_lock_screen.dart';
+import 'picture_settings_screen.dart';
+import 'sound_settings_screen.dart';
+import 'qr_share_screen.dart';
+import 'game_pad_screen.dart';
+import 'ambient_display_screen.dart';
+import 'subtitle_manager_screen.dart';
+import 'quick_dashboard_screen.dart';
+import 'motion_control_screen.dart';
+import 'channel_guide_screen.dart';
+import 'parental_timer_screen.dart';
+import 'accessibility_screen.dart';
+import 'remote_themes_screen.dart';
+import 'volume_limiter_screen.dart';
+import 'wake_on_lan_screen.dart';
+import 'quick_dial_screen.dart';
+import 'media_info_screen.dart';
+import 'screen_timeout_screen.dart';
+import 'energy_monitor_screen.dart';
+import 'ir_learning_screen.dart';
+import 'sleep_sounds_screen.dart';
+import 'multi_tv_screen.dart';
+import 'input_rename_screen.dart';
+import 'diagnostic_log_screen.dart';
+import 'colour_test_screen.dart';
+import 'child_profile_screen.dart';
+import 'network_info_screen.dart';
+import 'tv_app_manager_screen.dart';
+import 'remote_clipboard_screen.dart';
+import 'whistle_finder_screen.dart';
+import 'firmware_info_screen.dart';
+import 'notification_manager_screen.dart';
+import 'speed_test_screen.dart';
+import 'power_schedule_screen.dart';
+import 'aspect_ratio_screen.dart';
 import 'rooms_screen.dart';
+import 'scheduled_actions_screen.dart';
 import 'screen_mirror_screen.dart';
 import 'search_shortcuts_screen.dart';
 import 'touchpad_screen.dart';
@@ -175,6 +221,329 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Organize by room',
                     color: AppColors.primaryContainer,
                     onTap: () => _push(context, const RoomsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.star_rounded,
+                    title: 'Favourites',
+                    subtitle: 'Quick channel access',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const FavouriteChannelsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.gesture,
+                    title: 'Gestures',
+                    subtitle: 'Phone motion shortcuts',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const GestureShortcutsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.schedule_rounded,
+                    title: 'Schedules',
+                    subtitle: 'Timed TV actions',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ScheduledActionsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.text_snippet_rounded,
+                    title: 'Quick Text',
+                    subtitle: 'Saved text templates',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const QuickTextScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.settings_input_hdmi_rounded,
+                    title: 'HDMI',
+                    subtitle: 'Name & switch inputs',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const HdmiManagerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.history_rounded,
+                    title: 'History',
+                    subtitle: 'Command activity log',
+                    color: AppColors.primaryContainer,
+                    onTap: () => _push(context, const ActivityHistoryScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.people_rounded,
+                    title: 'Profiles',
+                    subtitle: 'Per-user remote settings',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const RemoteProfilesScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bedtime_rounded,
+                    title: 'Night Mode',
+                    subtitle: 'Evening volume & display',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const NightModeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.tune_rounded,
+                    title: 'Buttons',
+                    subtitle: 'Remap hardware keys',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ButtonMapperScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.settings_input_hdmi_rounded,
+                    title: 'CEC',
+                    subtitle: 'HDMI-CEC device control',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const CecDevicesScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.search_rounded,
+                    title: 'Search',
+                    subtitle: 'Universal TV search',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const UniversalSearchScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.lock,
+                    title: 'Lock',
+                    subtitle: 'Prevent accidental presses',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const RemoteLockScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.photo_filter,
+                    title: 'Picture',
+                    subtitle: 'TV picture presets',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const PictureSettingsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.equalizer,
+                    title: 'Sound',
+                    subtitle: 'Audio EQ & output',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SoundSettingsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.share,
+                    title: 'Share',
+                    subtitle: 'Export & import setup',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const QrShareScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.sports_esports,
+                    title: 'Game Pad',
+                    subtitle: 'Gaming controller layout',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const GamePadScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.nightlight_round,
+                    title: 'Ambient',
+                    subtitle: 'Dock mode clock & remote',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const AmbientDisplayScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.subtitles,
+                    title: 'Subtitles',
+                    subtitle: 'Caption size & language',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SubtitleManagerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.dashboard_customize,
+                    title: 'Quick Dash',
+                    subtitle: 'Customisable action grid',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const QuickDashboardScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.motion_photos_on,
+                    title: 'Motion',
+                    subtitle: 'Tilt & shake control',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const MotionControlScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.live_tv,
+                    title: 'Guide',
+                    subtitle: 'Channel browser & EPG',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ChannelGuideScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.child_care,
+                    title: 'Timer',
+                    subtitle: 'Viewing time limits',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ParentalTimerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.accessibility_new,
+                    title: 'Access',
+                    subtitle: 'Large buttons & contrast',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const AccessibilityScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.palette,
+                    title: 'Themes',
+                    subtitle: 'App colour & accent',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RemoteThemesScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.volume_up,
+                    title: 'Volume',
+                    subtitle: 'Presets & limiter',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const VolumeLimiterScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.power,
+                    title: 'WoL',
+                    subtitle: 'Wake TV over network',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const WakeOnLanScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.dialpad,
+                    title: 'Dial',
+                    subtitle: 'Channel number entry',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const QuickDialScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.display_settings,
+                    title: 'Media',
+                    subtitle: 'Signal & format info',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const MediaInfoScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.screen_lock_portrait,
+                    title: 'Timeout',
+                    subtitle: 'Saver & auto power',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ScreenTimeoutScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bolt,
+                    title: 'Energy',
+                    subtitle: 'Power cost estimate',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const EnergyMonitorScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.settings_remote,
+                    title: 'IR Learn',
+                    subtitle: 'Copy remote codes',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const IrLearningScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bedtime,
+                    title: 'Sleep',
+                    subtitle: 'Ambient sounds & timer',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SleepSoundsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.connected_tv,
+                    title: 'My TVs',
+                    subtitle: 'Multi-TV switcher',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const MultiTvScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.label,
+                    title: 'Inputs',
+                    subtitle: 'Rename HDMI ports',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const InputRenameScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bug_report,
+                    title: 'Logs',
+                    subtitle: 'Diagnostic viewer',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const DiagnosticLogScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.palette,
+                    title: 'Colour',
+                    subtitle: 'TV test patterns',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ColourTestScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.child_care,
+                    title: 'Kids',
+                    subtitle: 'Child-safe remote',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const ChildProfileScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.wifi_find,
+                    title: 'Network',
+                    subtitle: 'Connection info',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const NetworkInfoScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.apps,
+                    title: 'TV Apps',
+                    subtitle: 'App organiser',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const TvAppManagerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.content_paste,
+                    title: 'Clipboard',
+                    subtitle: 'Phone-to-TV text',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RemoteClipboardScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.notifications_active,
+                    title: 'Find TV',
+                    subtitle: 'Make TV beep',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const WhistleFinderScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.system_update,
+                    title: 'Firmware',
+                    subtitle: 'TV system info',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const FirmwareInfoScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.notifications,
+                    title: 'Alerts',
+                    subtitle: 'Manage alerts',
+                    color: AppColors.alertAmber,
+                    onTap: () =>
+                        _push(context, const NotificationManagerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.speed,
+                    title: 'Speed Test',
+                    subtitle: 'Network speed',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const SpeedTestScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.schedule,
+                    title: 'Power Timer',
+                    subtitle: 'Auto on/off',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const PowerScheduleScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.aspect_ratio,
+                    title: 'Aspect Ratio',
+                    subtitle: 'Screen format',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const AspectRatioScreen()),
                   ),
                 ],
               ),
