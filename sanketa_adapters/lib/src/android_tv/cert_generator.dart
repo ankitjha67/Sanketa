@@ -141,7 +141,7 @@ final _oidBasicConstraints = [2, 5, 29, 19];
 
 Uint8List _buildTbsCertificate(RSAPublicKey pub, String cn) {
   final now = DateTime.now().toUtc();
-  final notAfter = now.add(const Duration(days: 3650));
+  final notAfter = now.add(const Duration(days: 730));
   final serial = _randomSerial();
   final name = _buildName(cn);
 

@@ -29,6 +29,7 @@ class HisenseAdapter extends ControlAdapter {
     int port = 36669,
     bool tls = false,
     String? macAddress,
+    this.certVerifier,
   })  : _host = host,
         _port = port,
         _tls = tls,
@@ -38,6 +39,7 @@ class HisenseAdapter extends ControlAdapter {
   final int _port;
   final bool _tls;
   String? _mac;
+  final bool Function(X509Certificate cert)? certVerifier;
   Socket? _socket;
   StreamSubscription<Uint8List>? _socketSub;
   bool _connected = false;
@@ -147,7 +149,7 @@ class HisenseAdapter extends ControlAdapter {
     final socket = _tls
         ? await SecureSocket.connect(_host, _port,
             timeout: const Duration(seconds: 5),
-            onBadCertificate: (_) => true)
+            onBadCertificate: certVerifier ?? (_) => true)
         : await Socket.connect(_host, _port,
             timeout: const Duration(seconds: 5));
 

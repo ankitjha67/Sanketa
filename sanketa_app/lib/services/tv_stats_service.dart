@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sanketa_adapters/sanketa_adapters.dart' as adapters;
 
@@ -45,7 +46,7 @@ class TvStatsService extends ChangeNotifier {
     } on Object catch (e) {
       _connected = false;
       _error = 'Could not connect via ADB. Enable ADB over WiFi on the TV.';
-      debugPrint('[TvStats] connect error: $e');
+      assert(() { debugPrint('[TvStats] connect error: $e'); return true; }());
     } finally {
       if (!_disposed) {
         _connecting = false;
@@ -71,7 +72,7 @@ class TvStatsService extends ChangeNotifier {
       _error = null;
       notifyListeners();
     } on Object catch (e) {
-      debugPrint('[TvStats] refresh error: $e');
+      assert(() { debugPrint('[TvStats] refresh error: $e'); return true; }());
       if (!_disposed) {
         _error = 'Lost connection to the TV.';
         _connected = false;

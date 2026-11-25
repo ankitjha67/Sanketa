@@ -49,7 +49,7 @@ class RemotePad extends StatelessWidget {
             onTap: () => c.power(!c.isPoweredOn),
             semanticLabel: c.isPoweredOn ? 'Power off' : 'Power on',
           ),
-          if (c.caps.inputList) _sourceToggle(c),
+          if (c.caps.inputList) Flexible(child: _sourceToggle(c)),
           _roundButton(
             icon: c.isMuted ? Icons.volume_off : Icons.volume_up,
             color: c.isMuted ? hex(AppColors.error) : hex(AppColors.onSurfaceVariant),
@@ -88,7 +88,10 @@ class RemotePad extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: panel(fill: AppColors.surfaceContainerLowest, radius: AppRadii.md, borderOpacity: 0.3),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [seg('HDMI 1'), seg('HDMI 2'), seg('TV')]),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [seg('HDMI 1'), seg('HDMI 2'), seg('TV')]),
+      ),
     );
   }
 

@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" />
     <uses-feature android:name="android.hardware.consumerir" android:required="false"/>
     <application
         android:label="Sanketa"
@@ -35,11 +36,49 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="video/*"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"/>
+                <data android:host="*.youtube.com"/>
+                <data android:host="*.twitch.tv"/>
+                <data android:host="*.vimeo.com"/>
+                <data android:host="*.dailymotion.com"/>
+            </intent-filter>
         </activity>
         <service
             android:name=".ScreenMirrorService"
             android:foregroundServiceType="mediaProjection"
             android:exported="false"/>
+        <receiver
+            android:name=".SanketaWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.sanketa.action.POWER"/>
+                <action android:name="com.sanketa.action.VOL_UP"/>
+                <action android:name="com.sanketa.action.VOL_DOWN"/>
+                <action android:name="com.sanketa.action.MUTE"/>
+                <action android:name="com.sanketa.action.HOME"/>
+                <action android:name="com.sanketa.action.OPEN_APP"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info"/>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

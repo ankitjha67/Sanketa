@@ -38,6 +38,7 @@ class BraviaAtvrs {
     this.pairingPort = 6467,
     this.remotePort = 6466,
     this.onDisconnect,
+    this.certVerifier,
   });
 
   final String host;
@@ -46,6 +47,7 @@ class BraviaAtvrs {
   final int pairingPort;
   final int remotePort;
   final void Function()? onDisconnect;
+  final bool Function(X509Certificate cert)? certVerifier;
 
   SecureSocket? _socket;
   MessageDeframer? _deframer;
@@ -466,7 +468,7 @@ class BraviaAtvrs {
     return SecureSocket.connect(
       host, port,
       context: ctx,
-      onBadCertificate: (_) => true, // TV uses a self-signed cert
+      onBadCertificate: certVerifier ?? (_) => true,
       timeout: const Duration(seconds: 8),
     );
   }

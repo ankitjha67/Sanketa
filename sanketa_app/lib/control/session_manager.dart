@@ -3,9 +3,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sanketa_core/sanketa_core.dart' as core;
+
+void _smLog(String msg) {
+  assert(() {
+    debugPrint('[SessionMgr] $msg');
+    return true;
+  }());
+}
 
 enum ConnectionState { disconnected, connecting, connected, reconnecting }
 
@@ -185,7 +193,7 @@ class SessionManager extends ChangeNotifier {
 
     final delay = _backoffDelay(_attempt);
     _attempt++;
-    debugPrint('[SANKETA] Session reconnect #$_attempt in ${delay.inSeconds}s');
+    _smLog('reconnect #$_attempt in ${delay.inSeconds}s');
 
     _backoffTimer = Timer(delay, () {
       if (_disposed) return;

@@ -29,6 +29,8 @@ class VoiceControlService extends ChangeNotifier {
       _available = await _channel.invokeMethod<bool>('isAvailable') ?? false;
     } on PlatformException {
       _available = false;
+    } on MissingPluginException {
+      _available = false;
     }
     notifyListeners();
   }

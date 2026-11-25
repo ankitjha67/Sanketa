@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sanketa_adapters/sanketa_adapters.dart' as adapters;
@@ -46,7 +47,7 @@ class DebloatService extends ChangeNotifier {
           .toList();
       if (!_disposed) notifyListeners();
     } on Object catch (e) {
-      debugPrint('[Debloat] Failed to load database: $e');
+      assert(() { debugPrint('[Debloat] Failed to load database: $e'); return true; }());
     }
   }
 
@@ -93,7 +94,7 @@ class DebloatService extends ChangeNotifier {
           'Could not connect via ADB. Make sure ADB over WiFi is enabled on the TV.\n'
           'On Android TV: Settings > Device Preferences > About > Build (tap 7 times) > '
           'Developer Options > ADB Debugging > ON > ADB over Network.';
-      debugPrint('[Debloat] ADB connect error: $e');
+      assert(() { debugPrint('[Debloat] ADB connect error: $e'); return true; }());
     } finally {
       if (!_disposed) {
         _connecting = false;
@@ -117,7 +118,7 @@ class DebloatService extends ChangeNotifier {
           .length;
       if (!_disposed) notifyListeners();
     } on Object catch (e) {
-      debugPrint('[Debloat] Package scan error: $e');
+      assert(() { debugPrint('[Debloat] Package scan error: $e'); return true; }());
     }
   }
 
@@ -144,7 +145,7 @@ class DebloatService extends ChangeNotifier {
       return ok;
     } on Object catch (e) {
       _operationError = 'Error disabling ${entry.name}: check ADB connection.';
-      debugPrint('[Debloat] disable error: $e');
+      assert(() { debugPrint('[Debloat] disable error: $e'); return true; }());
       return false;
     } finally {
       _pendingOps.remove(entry.package);
@@ -167,7 +168,7 @@ class DebloatService extends ChangeNotifier {
       return ok;
     } on Object catch (e) {
       _operationError = 'Error re-enabling ${entry.name}.';
-      debugPrint('[Debloat] enable error: $e');
+      assert(() { debugPrint('[Debloat] enable error: $e'); return true; }());
       return false;
     } finally {
       _pendingOps.remove(entry.package);

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,9 +25,17 @@ import 'permission_service.dart';
 import 'preferences_service.dart';
 import 'room_service.dart';
 import 'session_manager.dart';
+import 'share_intent_service.dart';
 import 'sleep_timer_service.dart';
 import 'state_readback.dart';
 import 'voice_control_service.dart';
+
+void _log(String msg) {
+  assert(() {
+    debugPrint('[SANKETA] $msg');
+    return true;
+  }());
+}
 
 enum ScanState { idle, scanning, done }
 
@@ -107,6 +116,7 @@ class RemoteController extends ChangeNotifier {
     unawaited(preferences.load());
     unawaited(roomService.load());
     unawaited(permissions.check());
+    unawaited(shareIntent.checkInitial());
   }
 
   late core.ControlAdapter _adapter;
@@ -128,6 +138,7 @@ class RemoteController extends ChangeNotifier {
   final RoomService roomService = RoomService();
   final StateReadbackService stateReadback = StateReadbackService();
   final PermissionService permissions = PermissionService();
+  final ShareIntentService shareIntent = ShareIntentService();
 
   // Per-device ATVRS certificate (generated at first launch, persisted).
   static String? _cachedCertPem;
@@ -144,15 +155,15 @@ class RemoteController extends ChangeNotifier {
     if (await certFile.exists() && await keyFile.exists()) {
       _cachedCertPem = await certFile.readAsString();
       _cachedKeyPem = await keyFile.readAsString();
-      debugPrint('[SANKETA] loaded existing ATVRS cert from ${dir.path}');
+      _log('loaded existing ATVRS cert from ${dir.path}');
     } else {
-      debugPrint('[SANKETA] generating new per-device ATVRS cert ...');
+      _log('generating new per-device ATVRS cert ...');
       final gen = adapters.generateSelfSignedCert();
       await certFile.writeAsString(gen.certPem);
       await keyFile.writeAsString(gen.keyPem);
       _cachedCertPem = gen.certPem;
       _cachedKeyPem = gen.keyPem;
-      debugPrint('[SANKETA] saved new ATVRS cert to ${dir.path}');
+      _log('saved new ATVRS cert to ${dir.path}');
     }
     return (certPem: _cachedCertPem!, keyPem: _cachedKeyPem!);
   }
@@ -166,7 +177,7 @@ class RemoteController extends ChangeNotifier {
     final keyFile = File('${dir.path}/atvrs_key.pem');
     if (await certFile.exists()) await certFile.delete();
     if (await keyFile.exists()) await keyFile.delete();
-    debugPrint('[SANKETA] ATVRS cert reset — will regenerate on next use');
+    _log('ATVRS cert reset — will regenerate on next use');
   }
   IrDeviceEntry? activeIrEntry;
   bool get hasIrHardware => _irTransmitter.available;
@@ -506,14 +517,14 @@ class RemoteController extends ChangeNotifier {
       }
     } on StateError catch (e) {
       if (!_disposed && generation == _connectionGeneration) {
-        debugPrint('[SANKETA] Connection StateError (${d.adapterId}): $e');
+        _log('Connection StateError (${d.adapterId}): $e');
         isConnected = false;
         connectionError = _humanConnectionError(e.message, d);
         if (autoReconnect) sessionManager.scheduleReconnect();
       }
     } on Object catch (e, st) {
       if (!_disposed && generation == _connectionGeneration) {
-        debugPrint('[SANKETA] Connection error (${d.adapterId}): $e\n$st');
+        _log('Connection error (${d.adapterId}): $e\n$st');
         isConnected = false;
         connectionError = _humanConnectionError('$e', d);
         if (autoReconnect) sessionManager.scheduleReconnect();
@@ -919,7 +930,7 @@ class RemoteController extends ChangeNotifier {
       var connected = false;
       for (var attempt = 1; attempt <= 5 && !connected; attempt++) {
         await Future<void>.delayed(Duration(seconds: attempt));
-        debugPrint('[SANKETA] post-pair reconnect attempt $attempt/5');
+        _log('post-pair reconnect attempt $attempt/5');
         try {
           await _adapter.disconnect();
           await _adapter.connect();
@@ -927,7 +938,7 @@ class RemoteController extends ChangeNotifier {
           isConnected = true;
           connectionError = null;
         } on Object catch (e) {
-          debugPrint('[SANKETA] post-pair attempt $attempt failed: $e');
+          _log('post-pair attempt $attempt failed: $e');
           if (attempt == 5) {
             pairingError =
                 'Pairing completed but the TV still rejected the connection. '
@@ -1029,7 +1040,7 @@ class RemoteController extends ChangeNotifier {
 
   void key(core.Key k, {core.PressType press = core.PressType.tap}) {
     if (parentalControls.isKeyBlocked(k)) return;
-    debugPrint('[SANKETA] key pressed: ${k.name} press=$press');
+    _log('key pressed: ${k.name} press=$press');
     if (hapticEnabled) HapticFeedback.lightImpact();
     final caps = _adapter.capabilities();
     if (k == core.Key.mute) {
@@ -1061,7 +1072,7 @@ class RemoteController extends ChangeNotifier {
       result = core.CommandResult.failure('$e');
     }
     if (_disposed) return;
-    debugPrint('[SANKETA] command result: ok=${result.ok} error=${result.error}');
+    _log('command result: ok=${result.ok} error=${result.error}');
     if (result.ok) {
       if (_consecutiveFailures > 0) {
         _consecutiveFailures = 0;
@@ -1105,6 +1116,34 @@ class RemoteController extends ChangeNotifier {
     }
     if (raw.contains('authorization timed out')) {
       return 'TV did not respond. Press "Allow" on the TV screen.';
+    }
+    if (raw.contains('unsupported')) {
+      return 'This button is not available for your TV.';
+    }
+    if (raw.contains('Pairing failed') || raw.contains('pairing')) {
+      return 'Pairing did not complete. Make sure the code matches and try again.';
+    }
+    if (raw.contains('keyboard channel')) {
+      return 'Paired successfully, but the keyboard channel did not connect. Try reconnecting.';
+    }
+    if (raw.contains('AirPlay rejected') || raw.contains('AirPlay error')) {
+      return 'The TV could not play this file.';
+    }
+    if (raw.contains('Casting failed') || raw.contains('cast')) {
+      return 'Could not reach the TV for casting. Check that both devices are on the same WiFi.';
+    }
+    if (raw.contains('Screen mirroring failed') ||
+        raw.contains('mirroring')) {
+      return 'Screen mirroring could not start. Try again.';
+    }
+    if (raw.contains('permission') && raw.contains('denied')) {
+      return 'Screen capture permission was not granted.';
+    }
+    if (raw.contains('http 500') || raw.contains('500')) {
+      return 'The TV reported an internal error. Try again.';
+    }
+    if (raw.contains('INVALID_COMMAND') || raw.contains('INVALID_REQUEST')) {
+      return 'The TV could not process this request.';
     }
     return 'Commands are not reaching the TV. Check the connection.';
   }
@@ -1559,22 +1598,22 @@ class RemoteController extends ChangeNotifier {
     mirrorReceiverUrl = null;
     notifyListeners();
 
-    debugPrint('[WsMirror] Starting capture in WS mode...');
+    _log('[WsMirror] Starting capture in WS mode...');
 
     final wsResult = await _mirrorBridge.startMirror(mode: MirrorMode.ws);
     if (wsResult == null) {
-      debugPrint('[WsMirror] Permission denied');
+      _log('[WsMirror] Permission denied');
       mirrorError = 'Screen capture permission was denied.';
       notifyListeners();
       return;
     }
 
-    debugPrint('[WsMirror] Native started: wsPort=${wsResult.wsPort}');
+    _log('[WsMirror] Native started: wsPort=${wsResult.wsPort}');
 
     try {
       final host = _selectedDevice?.device.host ?? _castTargetHost;
       final lanIp = await adapters.findLanIp(targetHost: host);
-      debugPrint('[WsMirror] LAN IP=$lanIp');
+      _log('[WsMirror] LAN IP=$lanIp');
       if (lanIp == null) {
         await _mirrorBridge.stopMirror();
         mirrorError =
@@ -1585,20 +1624,20 @@ class RemoteController extends ChangeNotifier {
 
       _hlsServer = adapters.LiveStreamServer(segmentDir: wsResult.segmentDir);
       await _hlsServer!.start(lanIp, wsPort: wsResult.wsPort);
-      debugPrint('[WsMirror] HTTP server on port ${_hlsServer!.port}');
+      _log('[WsMirror] HTTP server on port ${_hlsServer!.port}');
 
       final receiverUrl = _hlsServer!.receiverUrl(lanIp);
       mirrorReceiverUrl = receiverUrl;
-      debugPrint('[WsMirror] Receiver URL=$receiverUrl');
+      _log('[WsMirror] Receiver URL=$receiverUrl');
 
       await Future<void>.delayed(const Duration(milliseconds: 800));
       if (_disposed) return;
 
-      debugPrint('[WsMirror] Launching receiver on TV via appLinkLaunch...');
+      _log('[WsMirror] Launching receiver on TV via appLinkLaunch...');
       final launchResult = await _adapter.launchApp(
         core.AppRef(id: receiverUrl, name: 'Screen Mirror'),
       );
-      debugPrint('[WsMirror] Launch result: ok=${launchResult.ok} error=${launchResult.error}');
+      _log('[WsMirror] Launch result: ok=${launchResult.ok} error=${launchResult.error}');
 
       if (_disposed) return;
 
@@ -1610,14 +1649,14 @@ class RemoteController extends ChangeNotifier {
           fileName: 'Screen Mirror',
           mimeType: 'text/html',
         );
-        debugPrint('[WsMirror] Low-latency mirror active');
+        _log('[WsMirror] Low-latency mirror active');
       } else {
-        debugPrint('[WsMirror] appLinkLaunch failed, falling back to HLS cast...');
+        _log('[WsMirror] appLinkLaunch failed, falling back to HLS cast...');
         await _fallbackHlsMirror(wsResult, lanIp);
         return;
       }
     } on Object catch (e, st) {
-      debugPrint('[WsMirror] Exception: $e\n$st');
+      _log('[WsMirror] Exception: $e\n$st');
       await _mirrorBridge.stopMirror();
       await _hlsServer?.stop();
       _hlsServer = null;
@@ -1629,7 +1668,7 @@ class RemoteController extends ChangeNotifier {
   /// HLS cast fallback — cascades through Google Cast → DLNA → AirPlay.
   Future<void> _fallbackHlsMirror(
       MirrorStartResult wsResult, String lanIp) async {
-    debugPrint('[Mirror-HLS] Falling back to HLS cast...');
+    _log('[Mirror-HLS] Falling back to HLS cast...');
     mirrorMode = 'HLS';
 
     final m3u8Url = 'http://$lanIp:${_hlsServer!.port}/live/stream.m3u8';
@@ -1668,7 +1707,7 @@ class RemoteController extends ChangeNotifier {
         _finishHlsMirror(caster is adapters.DlnaAdapter ? 'DLNA' : 'Cast');
         return;
       }
-      debugPrint('[Mirror-HLS] Primary caster failed: ${result.error}');
+      _log('[Mirror-HLS] Primary caster failed: ${result.error}');
     }
 
     // Probe DLNA on the TV host.
@@ -1687,7 +1726,7 @@ class RemoteController extends ChangeNotifier {
           _finishHlsMirror('DLNA');
           return;
         }
-        debugPrint('[Mirror-HLS] DLNA failed: ${result.error}');
+        _log('[Mirror-HLS] DLNA failed: ${result.error}');
       }
 
       // Probe AirPlay on the TV host.
@@ -1705,7 +1744,7 @@ class RemoteController extends ChangeNotifier {
           _finishHlsMirror('AirPlay');
           return;
         }
-        debugPrint('[Mirror-HLS] AirPlay failed: ${result.error}');
+        _log('[Mirror-HLS] AirPlay failed: ${result.error}');
       }
     }
 
@@ -1726,7 +1765,7 @@ class RemoteController extends ChangeNotifier {
       fileName: 'Screen Mirror',
       mimeType: 'application/x-mpegurl',
     );
-    debugPrint('[Mirror-HLS] Mirroring active via $protocol');
+    _log('[Mirror-HLS] Mirroring active via $protocol');
     if (!_disposed) notifyListeners();
   }
 
@@ -1758,21 +1797,21 @@ class RemoteController extends ChangeNotifier {
     mirrorReceiverUrl = null;
     notifyListeners();
 
-    debugPrint('[Mirror] Starting capture in WS mode...');
+    _log('[Mirror] Starting capture in WS mode...');
 
     final wsResult = await _mirrorBridge.startMirror(mode: MirrorMode.ws);
     if (wsResult == null) {
-      debugPrint('[Mirror] Permission denied');
+      _log('[Mirror] Permission denied');
       mirrorError = 'Screen capture permission was denied.';
       notifyListeners();
       return;
     }
 
-    debugPrint('[Mirror] Native started: dir=${wsResult.segmentDir} wsPort=${wsResult.wsPort}');
+    _log('[Mirror] Native started: dir=${wsResult.segmentDir} wsPort=${wsResult.wsPort}');
 
     try {
       final lanIp = await adapters.findLanIp(targetHost: _castTargetHost);
-      debugPrint('[Mirror] LAN IP=$lanIp');
+      _log('[Mirror] LAN IP=$lanIp');
       if (lanIp == null) {
         await _mirrorBridge.stopMirror();
         mirrorError =
@@ -1783,11 +1822,11 @@ class RemoteController extends ChangeNotifier {
 
       _hlsServer = adapters.LiveStreamServer(segmentDir: wsResult.segmentDir);
       final m3u8Url = await _hlsServer!.start(lanIp, wsPort: wsResult.wsPort);
-      debugPrint('[Mirror] HLS server on port ${_hlsServer!.port}, m3u8=$m3u8Url');
+      _log('[Mirror] HLS server on port ${_hlsServer!.port}, m3u8=$m3u8Url');
 
       if (wsResult.wsPort != null && wsResult.wsPort! > 0) {
         mirrorReceiverUrl = _hlsServer!.receiverUrl(lanIp);
-        debugPrint('[Mirror] WS receiver=$mirrorReceiverUrl');
+        _log('[Mirror] WS receiver=$mirrorReceiverUrl');
       }
 
       mirrorMode = 'HLS';
@@ -1801,18 +1840,18 @@ class RemoteController extends ChangeNotifier {
             latestFile.readAsStringSync().trim(),
           );
           if (i % 4 == 0 || (idx != null && idx >= 2)) {
-            debugPrint('[Mirror] Segment check [$i] latest=$idx');
+            _log('[Mirror] Segment check [$i] latest=$idx');
           }
           if (idx != null && idx >= 2) {
             ready = true;
             break;
           }
         } else if (i % 4 == 0) {
-          debugPrint('[Mirror] Segment check [$i] latest.txt missing');
+          _log('[Mirror] Segment check [$i] latest.txt missing');
         }
       }
       if (!ready) {
-        debugPrint('[Mirror] Not ready after 10s — aborting');
+        _log('[Mirror] Not ready after 10s — aborting');
         await _mirrorBridge.stopMirror();
         await _hlsServer?.stop();
         _hlsServer = null;
@@ -1822,13 +1861,13 @@ class RemoteController extends ChangeNotifier {
         return;
       }
 
-      debugPrint('[Mirror] Casting HLS: $m3u8Url');
+      _log('[Mirror] Casting HLS: $m3u8Url');
       final result = await caster.castUri(
         m3u8Url,
         mimeType: 'application/x-mpegurl',
         title: 'Screen Mirror',
       );
-      debugPrint('[Mirror] Cast result: ok=${result.ok} error=${result.error}');
+      _log('[Mirror] Cast result: ok=${result.ok} error=${result.error}');
 
       if (_disposed) return;
       if (result.ok) {
@@ -1838,17 +1877,16 @@ class RemoteController extends ChangeNotifier {
           fileName: 'Screen Mirror',
           mimeType: 'application/x-mpegurl',
         );
-        debugPrint('[Mirror] Mirroring active');
+        _log('[Mirror] Mirroring active');
       } else {
         await _mirrorBridge.stopMirror();
         await _hlsServer?.stop();
         _hlsServer = null;
-        mirrorError = result.error ??
-            'The TV could not start screen mirroring. Try again.';
-        debugPrint('[Mirror] Cast failed: $mirrorError');
+        mirrorError = _humanCommandError(result.error);
+        _log('[Mirror] Cast failed: $mirrorError');
       }
     } on Object catch (e, st) {
-      debugPrint('[Mirror] Exception: $e\n$st');
+      _log('[Mirror] Exception: $e\n$st');
       await _mirrorBridge.stopMirror();
       await _hlsServer?.stop();
       _hlsServer = null;
@@ -1910,6 +1948,7 @@ class RemoteController extends ChangeNotifier {
     stateReadback.dispose();
     roomService.dispose();
     permissions.dispose();
+    shareIntent.dispose();
     super.dispose();
   }
 

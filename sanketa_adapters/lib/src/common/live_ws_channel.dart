@@ -14,10 +14,11 @@ import 'dart:io';
 import 'ws_channel.dart';
 
 class LiveWsChannel implements WsChannel {
-  LiveWsChannel({required this.url, this.fallbackUrl});
+  LiveWsChannel({required this.url, this.fallbackUrl, this.certVerifier});
 
   final String url;
   final String? fallbackUrl;
+  final bool Function(X509Certificate cert, String host, int port)? certVerifier;
 
   WebSocket? _ws;
   HttpClient? _client;
@@ -70,7 +71,7 @@ class LiveWsChannel implements WsChannel {
     if (isSecure) {
       _client?.close(force: true);
       _client = HttpClient()
-        ..badCertificateCallback = ((_, __, ___) => true)
+        ..badCertificateCallback = certVerifier ?? ((_, __, ___) => true)
         ..connectionTimeout = const Duration(seconds: 8);
       return WebSocket.connect(
         target,

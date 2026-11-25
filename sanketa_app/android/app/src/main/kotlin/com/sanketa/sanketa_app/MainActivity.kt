@@ -1,13 +1,18 @@
 package com.sanketa.sanketa_app
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.ConsumerIrManager
 import android.media.projection.MediaProjectionManager
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.provider.Settings
 import android.util.DisplayMetrics
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -21,9 +26,14 @@ class MainActivity : FlutterActivity() {
     private var mirrorPermissionResult: MethodChannel.Result? = null
     private var pendingProjectionResultCode: Int? = null
     private var pendingProjectionData: Intent? = null
+    private var nearbyDevicesPermissionResult: MethodChannel.Result? = null
+    private var shareIntentChannel: MethodChannel? = null
+    private var widgetChannel: MethodChannel? = null
+    private var pendingWidgetCommand: String? = null
 
     companion object {
         private const val MIRROR_REQUEST_CODE = 9001
+        private const val NEARBY_DEVICES_REQUEST_CODE = 9002
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -60,6 +70,67 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sanketa/permissions")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "checkNearbyDevices" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            val granted = ContextCompat.checkSelfPermission(
+                                this, Manifest.permission.NEARBY_WIFI_DEVICES
+                            ) == PackageManager.PERMISSION_GRANTED
+                            result.success(if (granted) "granted" else "denied")
+                        } else {
+                            result.success("granted")
+                        }
+                    }
+                    "requestNearbyDevices" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            val granted = ContextCompat.checkSelfPermission(
+                                this, Manifest.permission.NEARBY_WIFI_DEVICES
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (granted) {
+                                result.success("granted")
+                            } else {
+                                nearbyDevicesPermissionResult = result
+                                ActivityCompat.requestPermissions(
+                                    this,
+                                    arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES),
+                                    NEARBY_DEVICES_REQUEST_CODE
+                                )
+                            }
+                        } else {
+                            result.success("granted")
+                        }
+                    }
+                    "checkLocalNetwork" -> result.success("granted")
+                    "requestLocalNetwork" -> result.success("granted")
+                    else -> result.notImplemented()
+                }
+            }
+
+        shareIntentChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sanketa/share_intent")
+        shareIntentChannel!!.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getInitialSharedUrl" -> {
+                    result.success(getSharedUrl(intent))
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        widgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sanketa/widget")
+        widgetChannel!!.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getWidgetCommand" -> {
+                    val cmd = pendingWidgetCommand
+                    pendingWidgetCommand = null
+                    result.success(cmd)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        pendingWidgetCommand = intent?.getStringExtra("widget_command")
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sanketa/screen_mirror")
             .setMethodCallHandler { call, result ->
@@ -183,6 +254,44 @@ class MainActivity : FlutterActivity() {
                 pending?.error("permission_denied", "User denied screen capture", null)
             }
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == NEARBY_DEVICES_REQUEST_CODE) {
+            val pending = nearbyDevicesPermissionResult
+            nearbyDevicesPermissionResult = null
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            pending?.success(if (granted) "granted" else "denied")
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val widgetCmd = intent.getStringExtra("widget_command")
+        if (widgetCmd != null) {
+            pendingWidgetCommand = widgetCmd
+            widgetChannel?.invokeMethod("onWidgetCommand", widgetCmd)
+            return
+        }
+        val url = getSharedUrl(intent)
+        if (url != null) {
+            shareIntentChannel?.invokeMethod("onSharedUrl", url)
+        }
+    }
+
+    private fun getSharedUrl(intent: Intent?): String? {
+        if (intent == null) return null
+        if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            return intent.getStringExtra(Intent.EXTRA_TEXT)
+        }
+        if (intent.action == Intent.ACTION_VIEW) {
+            return intent.data?.toString()
+        }
+        return null
     }
 
     override fun onDestroy() {

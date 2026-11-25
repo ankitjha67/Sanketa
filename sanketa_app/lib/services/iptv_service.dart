@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sanketa_core/sanketa_core.dart' as core;
@@ -84,7 +85,7 @@ class IptvService extends ChangeNotifier {
           _http.close(force: true);
           _http = _freshClient();
         }
-        debugPrint('[IPTV] Load error: $e');
+        assert(() { debugPrint('[IPTV] Load error: $e'); return true; }());
       }
     } finally {
       if (!_disposed) {

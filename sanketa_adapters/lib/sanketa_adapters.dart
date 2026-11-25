@@ -26,6 +26,7 @@ export 'src/cast/google_cast_adapter.dart';
 export 'src/cast/live_stream_server.dart';
 export 'src/common/live_ws_channel.dart';
 export 'src/common/media_server.dart';
+export 'src/common/tofu_cert_store.dart';
 export 'src/common/wol.dart';
 export 'src/common/ws_channel.dart';
 export 'src/debloat/bloatware_catalog.dart';

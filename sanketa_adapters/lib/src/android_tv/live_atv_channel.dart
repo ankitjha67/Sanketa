@@ -35,12 +35,14 @@ class LiveAtvChannel implements AtvChannel {
     required this.certPem,
     required this.keyPem,
     this.port = 6466,
+    this.certVerifier,
   });
 
   final String host;
   final String certPem;
   final String keyPem;
   final int port;
+  final bool Function(X509Certificate cert)? certVerifier;
 
   SecureSocket? _socket;
   StreamSubscription<Uint8List>? _sub;
@@ -103,7 +105,7 @@ class LiveAtvChannel implements AtvChannel {
       host,
       port,
       context: ctx,
-      onBadCertificate: (_) => true,
+      onBadCertificate: certVerifier ?? (_) => true,
       timeout: const Duration(seconds: 8),
     );
     _log('TLS socket open');

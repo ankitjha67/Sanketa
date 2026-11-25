@@ -27,12 +27,16 @@ const _nsReceiver = 'urn:x-cast:com.google.cast.receiver';
 const _nsMedia = 'urn:x-cast:com.google.cast.media';
 
 class GoogleCastAdapter implements MediaCaster {
-  GoogleCastAdapter({required String host, int port = 8009})
-      : _host = host,
+  GoogleCastAdapter({
+    required String host,
+    int port = 8009,
+    this.certVerifier,
+  })  : _host = host,
         _port = port;
 
   final String _host;
   final int _port;
+  final bool Function(X509Certificate cert)? certVerifier;
 
   String get host => _host;
 
@@ -53,7 +57,7 @@ class GoogleCastAdapter implements MediaCaster {
       _socket = await SecureSocket.connect(
         _host,
         _port,
-        onBadCertificate: (_) => true,
+        onBadCertificate: certVerifier ?? (_) => true,
         timeout: const Duration(seconds: 8),
       );
       _sub = _socket!.listen(
@@ -182,7 +186,7 @@ class GoogleCastAdapter implements MediaCaster {
       'autoplay': true,
       'requestId': ++_requestId,
     });
-    dev.log('[Cast] LOAD: $loadMsg', name: 'GoogleCast');
+    assert(() { dev.log('[Cast] LOAD: $loadMsg', name: 'GoogleCast'); return true; }());
     _send(_nsMedia, _transportId!, loadMsg);
 
     final response = await _waitFor(
@@ -197,14 +201,14 @@ class GoogleCastAdapter implements MediaCaster {
     );
 
     if (response == null) {
-      dev.log('[Cast] No response within 15s', name: 'GoogleCast');
+      assert(() { dev.log('[Cast] No response within 15s', name: 'GoogleCast'); return true; }());
       return const CastResult.failure(
           'The TV did not respond to the cast request. Try again.');
     }
 
     final rPayload = _tryDecode(response.payloadUtf8);
     final type = rPayload?['type'] as String?;
-    dev.log('[Cast] Response: type=$type payload=$rPayload', name: 'GoogleCast');
+    assert(() { dev.log('[Cast] Response: type=$type', name: 'GoogleCast'); return true; }());
     if (type == 'LOAD_FAILED' || type == 'INVALID_REQUEST') {
       return CastResult.failure(
           rPayload?['reason'] as String? ??
