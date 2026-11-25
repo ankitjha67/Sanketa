@@ -7,7 +7,7 @@ import 'package:sanketa_design/sanketa_design.dart';
 import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
-import 'iptv_screen.dart';
+
 
 class CastScreen extends StatelessWidget {
   const CastScreen({super.key});
@@ -697,53 +697,6 @@ class CastScreen extends StatelessWidget {
         Text('MEDIA SOURCES',
             style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline))),
         const SizedBox(height: AppSpacing.sm),
-        GestureDetector(
-          onTap: () {
-            final ctrl = RemoteScope.of(context);
-            Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) =>
-                  RemoteScope(controller: ctrl, child: const IptvScreen()),
-            ));
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: panel(
-                fill: AppColors.surfaceContainerLowest,
-                radius: AppRadii.md,
-                borderOpacity: 0.2),
-            child: Row(children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: hex(AppColors.primaryContainer).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                ),
-                child: Icon(Icons.live_tv,
-                    size: 18, color: hex(AppColors.primaryContainer)),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Free TV / IPTV',
-                        style: gfont(AppType.bodySm,
-                            color: hex(AppColors.onSurface),
-                            size: 13,
-                            weight: FontWeight.w500)),
-                    Text('10,000+ free channels from iptv-org',
-                        style: gfont(AppType.bodySm,
-                            color: hex(AppColors.onSurfaceVariant), size: 11)),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right,
-                  size: 18, color: hex(AppColors.onSurfaceVariant)),
-            ]),
-          ),
-        ),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: [

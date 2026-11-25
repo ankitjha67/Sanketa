@@ -1282,21 +1282,8 @@ class RemoteController extends ChangeNotifier {
     try {
       var castUrl = url;
 
-      // HLS ad filtering: proxy .m3u8 streams through the ad-strip proxy
-      if (_isHlsUrl(url)) {
-        final lanIp = await adapters.findLanIp(targetHost: _castTargetHost);
-        if (lanIp != null) {
-          _hlsAdProxy ??= adapters.HlsProxyServer();
-          if (!_hlsAdProxy!.isRunning) {
-            await _hlsAdProxy!.start(lanIp);
-          }
-          castUrl = _hlsAdProxy!.proxyUrl(url);
-          assert(() {
-            debugPrint('[HlsProxy] Filtering ads: $url -> $castUrl');
-            return true;
-          }());
-        }
-      }
+      // HLS ad filtering disabled — kept for future use.
+      // if (_isHlsUrl(url)) { ... }
 
       final result = await caster.castUri(
         castUrl,
@@ -1320,13 +1307,6 @@ class RemoteController extends ChangeNotifier {
       );
     }
     if (!_disposed) notifyListeners();
-  }
-
-  static bool _isHlsUrl(String url) {
-    final lower = url.toLowerCase();
-    return lower.endsWith('.m3u8') ||
-        lower.contains('.m3u8?') ||
-        lower.contains('.m3u8#');
   }
 
   Future<void> launchApp(String packageName, String label) async {

@@ -5,7 +5,6 @@ import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 import 'app_launcher_screen.dart';
 import 'debloat_screen.dart';
-import 'iptv_screen.dart';
 import 'tv_stats_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
@@ -33,13 +32,6 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Remove ads & bloatware',
                     color: AppColors.error,
                     onTap: () => _push(context, const DebloatScreen()),
-                  ),
-                  _ToolCard(
-                    icon: Icons.live_tv_rounded,
-                    title: 'Free TV',
-                    subtitle: 'IPTV channels & cast',
-                    color: AppColors.primaryContainer,
-                    onTap: () => _push(context, const IptvScreen()),
                   ),
                   _ToolCard(
                     icon: Icons.analytics_rounded,
