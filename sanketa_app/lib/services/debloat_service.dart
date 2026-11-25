@@ -79,6 +79,12 @@ class DebloatService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Disconnect the previous client to destroy its socket before
+      // opening a new one (prevents orphaned-socket auth storms).
+      if (_adb != null) {
+        await _adb!.disconnect();
+        _adb = null;
+      }
       _adb = adapters.AdbClient(host: host, port: port);
       final ok = await _adb!.connect();
       _connected = ok;

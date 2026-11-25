@@ -55,6 +55,9 @@ class _AppLauncherScreenState extends State<AppLauncherScreen> {
     }
 
     try {
+      // Disconnect previous client to destroy its socket before opening
+      // a new one (prevents orphaned-socket auth storms).
+      await _adb?.disconnect();
       _adb = adapters.AdbClient(host: host, port: 5555);
       final ok = await _adb!.connect();
       if (!ok) {

@@ -17,6 +17,9 @@ class TvStatsService extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  DateTime? _lastConnectAttempt;
+  static const _minReconnectInterval = Duration(seconds: 10);
+
   adapters.TvMemoryStats? _memory;
   adapters.TvMemoryStats? get memory => _memory;
 
@@ -31,13 +34,35 @@ class TvStatsService extends ChangeNotifier {
 
   Future<void> connectAndPoll(String host, {int port = 5555}) async {
     if (_disposed || _connecting) return;
+
+    // Throttle reconnect attempts so rapid Retry taps cannot storm the TV.
+    final now = DateTime.now();
+    if (_lastConnectAttempt != null &&
+        now.difference(_lastConnectAttempt!) < _minReconnectInterval) {
+      return;
+    }
+    _lastConnectAttempt = now;
+
     _connecting = true;
     _error = null;
     notifyListeners();
 
     try {
+      // Disconnect the previous client so its socket is destroyed
+      // before we open a new one.
+      if (_adb != null) {
+        await _adb!.disconnect();
+        _adb = null;
+      }
       _adb = adapters.AdbClient(host: host, port: port);
-      await _adb!.connect();
+      final ok = await _adb!.connect();
+      if (!ok) {
+        _connected = false;
+        _error = _adb!.isAuthWaiting
+            ? 'Approve "Allow USB debugging?" on the TV, then retry.'
+            : 'Could not connect via ADB. Enable ADB over WiFi on the TV.';
+        return;
+      }
       _connected = true;
       await refresh();
       _pollTimer?.cancel();

@@ -51,6 +51,8 @@ class AdbClient {
 
   Socket? _socket;
   bool _connected = false;
+  bool _authSent = false;
+  Completer<bool>? _connectInProgress;
   String? _deviceBanner;
   int _nextLocalId = 1;
   final _pendingStreams = <int, Completer<_ShellStream>>{};
@@ -61,43 +63,86 @@ class AdbClient {
   RSAPublicKey? _publicKey;
 
   bool get isConnected => _connected;
+  bool get isAuthWaiting => _authSent && !_connected;
   String? get deviceBanner => _deviceBanner;
 
   Future<bool> connect() async {
     if (_connected) return true;
-    await _ensureKeys();
-    try {
-      _socket = await Socket.connect(host, port,
-          timeout: const Duration(seconds: 5));
-    } on Object {
-      return false;
+
+    // If a connect is already in flight, piggyback on it instead of
+    // opening a second socket (the root cause of the reconnect storm).
+    if (_connectInProgress != null) {
+      return _connectInProgress!.future;
     }
-    _buf.clear();
 
-    final connCompleter = Completer<bool>();
-    _socket!.listen(
-      (data) => _onData(data, connCompleter),
-      onError: (Object e) {
-        _connected = false;
-        if (!connCompleter.isCompleted) connCompleter.complete(false);
-      },
-      onDone: () {
-        _connected = false;
-        if (!connCompleter.isCompleted) connCompleter.complete(false);
-        _failAllStreams('Connection closed');
-      },
-    );
+    final gate = Completer<bool>();
+    _connectInProgress = gate;
 
-    _send(buildCnxn());
-    _connected = await connCompleter.future.timeout(
-      const Duration(seconds: 10),
-      onTimeout: () => false,
-    );
-    return _connected;
+    try {
+      // Destroy any orphaned socket from a prior timed-out attempt.
+      _socket?.destroy();
+      _socket = null;
+      _authSent = false;
+
+      await _ensureKeys();
+      try {
+        _socket = await Socket.connect(host, port,
+            timeout: const Duration(seconds: 5));
+      } on Object {
+        gate.complete(false);
+        return false;
+      }
+      _buf.clear();
+
+      final connCompleter = Completer<bool>();
+      _socket!.listen(
+        (data) => _onData(data, connCompleter),
+        onError: (Object e) {
+          _connected = false;
+          _authSent = false;
+          if (!connCompleter.isCompleted) connCompleter.complete(false);
+        },
+        onDone: () {
+          _connected = false;
+          _authSent = false;
+          if (!connCompleter.isCompleted) connCompleter.complete(false);
+          _failAllStreams('Connection closed');
+        },
+      );
+
+      _send(buildCnxn());
+
+      // Wait up to 60 s for the TV to approve. The TV's "Allow USB
+      // debugging?" dialog blocks the CNXN response; the old 10 s
+      // timeout expired mid-dialog, the caller retried, each retry
+      // opened a new socket, and adbd was flooded with 300+ prompts.
+      _connected = await connCompleter.future.timeout(
+        const Duration(seconds: 60),
+        onTimeout: () => false,
+      );
+
+      if (!_connected) {
+        _socket?.destroy();
+        _socket = null;
+        _authSent = false;
+      }
+
+      gate.complete(_connected);
+      return _connected;
+    } on Object {
+      _socket?.destroy();
+      _socket = null;
+      _authSent = false;
+      if (!gate.isCompleted) gate.complete(false);
+      return false;
+    } finally {
+      _connectInProgress = null;
+    }
   }
 
   Future<void> disconnect() async {
     _connected = false;
+    _authSent = false;
     _failAllStreams('Disconnected');
     _socket?.destroy();
     _socket = null;
@@ -421,11 +466,11 @@ class AdbClient {
   }
 
   void _handleAuthToken(Uint8List token, Completer<bool> connCompleter) {
+    _authSent = true;
     final signed = _signToken(token);
     if (signed != null) {
       _send(buildAuthSignature(signed));
     }
-    // Also send public key so TV can prompt user to accept.
     final pubKeyBytes = _encodePublicKeyForAdb();
     _send(buildAuthPublicKey(pubKeyBytes));
   }
