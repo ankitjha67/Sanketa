@@ -5,11 +5,11 @@ import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 import 'app_launcher_screen.dart';
+import 'backup_screen.dart';
 import 'connection_doctor_screen.dart';
 import 'custom_layout_screen.dart';
 import 'debloat_screen.dart';
 import 'macro_screen.dart';
-import 'backup_screen.dart';
 import 'multi_room_screen.dart';
 import 'network_diagnostics_screen.dart';
 import 'parental_controls_screen.dart';
@@ -18,7 +18,9 @@ import 'search_shortcuts_screen.dart';
 import 'touchpad_screen.dart';
 import 'tv_stats_screen.dart';
 import 'usage_analytics_screen.dart';
+import 'video_handoff_screen.dart';
 import 'voice_screen.dart';
+import 'wearable_screen.dart';
 import 'widget_config_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
@@ -151,6 +153,20 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Home screen controls',
                     color: AppColors.primary,
                     onTap: () => _push(context, const WidgetConfigScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.watch_rounded,
+                    title: 'Wearable',
+                    subtitle: 'Watch remote control',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const WearableScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.ondemand_video_rounded,
+                    title: 'Video',
+                    subtitle: 'Send URLs to TV',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const VideoHandoffScreen()),
                   ),
                 ],
               ),

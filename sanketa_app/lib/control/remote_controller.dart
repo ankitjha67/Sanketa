@@ -1402,6 +1402,17 @@ class RemoteController extends ChangeNotifier {
 
   String? get tvHost => _selectedDevice?.device.host;
 
+  Future<core.CommandResult> launchUrl(String url) async {
+    if (_selectedDevice == null) {
+      return const core.CommandResult.failure('No TV connected');
+    }
+    try {
+      return await _adapter.launchApp(core.AppRef(id: url, name: url));
+    } on Object catch (e) {
+      return core.CommandResult.failure('$e');
+    }
+  }
+
   Future<void> pauseCast() async {
     final caster = _caster;
     if (caster == null || castSession.phase != core.CastPhase.playing) return;
