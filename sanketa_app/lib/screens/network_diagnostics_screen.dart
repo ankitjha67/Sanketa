@@ -18,7 +18,7 @@ class NetworkDiagnosticsScreen extends StatefulWidget {
 enum _CheckStatus { idle, running, pass, warn, fail }
 
 class _DiagResult {
-  _DiagResult(this.label, this.status, [this.detail]);
+  _DiagResult(this.label, this.status);
   final String label;
   _CheckStatus status;
   String? detail;
