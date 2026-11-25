@@ -39,6 +39,7 @@ class ProtocolProbe {
     this.roku = false,
     this.panasonic = false,
     this.philips = false,
+    this.hisense = false,
   });
 
   final bool atvrs;
@@ -52,6 +53,7 @@ class ProtocolProbe {
   final bool roku;
   final bool panasonic;
   final bool philips;
+  final bool hisense;
 
   List<String> get available {
     final r = <String>[];
@@ -66,6 +68,7 @@ class ProtocolProbe {
     if (dial) r.add('dial');
     if (panasonic) r.add('panasonic');
     if (philips) r.add('philips');
+    if (hisense) r.add('hisense');
     return r;
   }
 }
@@ -274,6 +277,10 @@ class RemoteController extends ChangeNotifier {
       map['D-pad / Keys'] = 'Roku ECP (port 8060)';
       map['App Launch'] = 'Roku ECP /launch/{appId}';
       map['Keyboard'] = 'Roku ECP /keypress/Lit_*';
+    } else if (adapterId == 'hisense') {
+      map['D-pad / Keys'] = 'Hisense VIDAA MQTT (sendkey)';
+      map['Volume'] = 'Hisense VIDAA MQTT (volume)';
+      map['App Launch'] = 'Hisense VIDAA MQTT (launchapp)';
     } else if (adapterId == 'dlna') {
       map['Volume'] = 'UPnP RenderingControl';
       map['Media Casting'] = 'UPnP AVTransport';
@@ -549,6 +556,8 @@ class RemoteController extends ChangeNotifier {
         return adapters.PhilipsAdapter(host: host);
       case 'panasonic':
         return adapters.PanasonicAdapter(host: host);
+      case 'hisense':
+        return adapters.HisenseAdapter(host: host);
       case 'broadlink':
         // BroadLink WiFi-IR bridge. Requires a codeset (selected via the IR
         // wizard). If no codeset is active, fall through to a default.
@@ -689,7 +698,7 @@ class RemoteController extends ChangeNotifier {
     bool atvrs = false, simpleIp = false, dlna = false;
     bool googleCast = false, airplay = false, webos = false;
     bool tizen = false, roku = false;
-    bool panasonic = false, philips = false;
+    bool panasonic = false, philips = false, hisense = false;
     final dial = _selectedDevice!.metadata['application-url'] != null;
 
     // Run TCP probes in parallel.
@@ -702,6 +711,7 @@ class RemoteController extends ChangeNotifier {
       adapters.probeGoogleCast(host), // Google Cast (port 8009 TLS)
       _tcpProbe(host, 55000), // Panasonic Viera
       _tcpProbe(host, 1925).then((ok) async => ok || await _tcpProbe(host, 1926)), // Philips JointSpace
+      _tcpProbe(host, 36669).then((ok) async => ok || await _tcpProbe(host, 36670)), // Hisense VIDAA MQTT
     ]);
 
     atvrs = results[0];
@@ -712,6 +722,7 @@ class RemoteController extends ChangeNotifier {
     googleCast = results[5];
     panasonic = results[6];
     philips = results[7];
+    hisense = results[8];
 
     // DLNA/UPnP probe is slightly heavier.
     final probe = adapters.UpnpProbe();
@@ -735,6 +746,7 @@ class RemoteController extends ChangeNotifier {
       roku: roku,
       panasonic: panasonic,
       philips: philips,
+      hisense: hisense,
     );
     isProbing = false;
     notifyListeners();

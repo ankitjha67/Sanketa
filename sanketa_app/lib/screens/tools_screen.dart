@@ -9,14 +9,17 @@ import 'connection_doctor_screen.dart';
 import 'custom_layout_screen.dart';
 import 'debloat_screen.dart';
 import 'macro_screen.dart';
+import 'backup_screen.dart';
 import 'multi_room_screen.dart';
 import 'network_diagnostics_screen.dart';
 import 'parental_controls_screen.dart';
+import 'screen_mirror_screen.dart';
 import 'search_shortcuts_screen.dart';
 import 'touchpad_screen.dart';
 import 'tv_stats_screen.dart';
 import 'usage_analytics_screen.dart';
 import 'voice_screen.dart';
+import 'widget_config_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -127,6 +130,27 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'TV usage analytics',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const UsageAnalyticsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.cast_connected_rounded,
+                    title: 'Mirror',
+                    subtitle: 'Cast phone screen',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ScreenMirrorScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.backup_rounded,
+                    title: 'Backup',
+                    subtitle: 'Save & restore data',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const BackupScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.widgets_rounded,
+                    title: 'Widgets',
+                    subtitle: 'Home screen controls',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const WidgetConfigScreen()),
                   ),
                 ],
               ),

@@ -34,6 +34,7 @@ export 'src/dial/dial_client.dart';
 export 'src/dlna/dlna_adapter.dart';
 export 'src/dlna/upnp_probe.dart';
 export 'src/fire_tv/fire_tv_adapter.dart';
+export 'src/hisense/hisense_adapter.dart';
 export 'src/hls/hls_proxy.dart';
 export 'src/iptv/channel_catalog.dart';
 export 'src/iptv/m3u_parser.dart';
