@@ -5,6 +5,7 @@
 /// different way, and the engine merges them into one de-duplicated list.
 library sanketa_discovery;
 
+export 'src/broadlink_backend.dart';
 export 'src/mdns_backend.dart';
 export 'src/probe_backend.dart';
 export 'src/ssdp_backend.dart';

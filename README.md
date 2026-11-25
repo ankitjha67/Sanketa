@@ -15,7 +15,7 @@ media to the screen.
 
 - **311+ tests passing** across 7 packages, all analyzers clean
 - **10 screens**: Remote, Search, Cast, Tools, Devices, Settings + Debloat, IPTV, Performance, App Launcher
-- **10 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL
+- **12 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge
 - **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong decrypted database)
 - **5 value-add features (F1–F5)** built, integrated, and UI-verified on device
 - **ATVRS keyboard typing** (the hero feature) fully hardware-validated: type on phone → see it on TV → submit search
@@ -82,13 +82,15 @@ SANKETA/
 │     ├─ vizio/          SmartCast HTTPS
 │     ├─ dlna/           UPnP AVTransport/RenderingControl
 │     ├─ dial/           DIAL app launch
+│     ├─ broadlink/      BroadLink RM WiFi-IR bridge (local UDP, AES-128-CBC)
 │     ├─ cast/           Google CastV2 TLS
 │     ├─ hls/            HLS ad-skip proxy (SCTE-35)
 │     ├─ iptv/           M3U parser + iptv-org catalog
 │     ├─ debloat/        Bloatware database + ADB disable
+│     ├─ switchbot/      SwitchBot Hub WiFi-IR bridge (cloud API, opt-in)
 │     └─ adb/            ADB command layer for tools features
 ├─ sanketa_discovery/    Real socket discovery backends
-│  └─ lib/src/           ssdp_backend · mdns_backend · probe_backend
+│  └─ lib/src/           ssdp_backend · mdns_backend · probe_backend · broadlink_backend
 ├─ sanketa_ir/           IR subsystem (any TV ever made, offline)
 │  └─ lib/src/
 │     ├─ ir_codec.dart   NEC/Samsung/SIRC/RC5/raw encoders
@@ -136,8 +138,8 @@ Universal reach comes from a fallback ladder, not one protocol:
 | 5 | Native smart TV protocols (Android TV, Tizen, webOS, Roku, BRAVIA) | ✅ Built + HW-validated |
 | 4 | Generic network (DLNA, DIAL, Google Cast) | ✅ Built + HW-validated |
 | 3 | Phone IR blaster (NEC/Samsung/SIRC/RC5/AC, 10,550 codesets) | ✅ Built |
-| 2 | WiFi→IR bridge (BroadLink, Switchbot) | ⚪ Phase 2 |
-| 1 | Manual learning (point and capture) | ⚪ Phase 2 |
+| 2 | WiFi→IR bridge (BroadLink, SwitchBot) | ✅ Built |
+| 1 | Manual learning (point and capture via bridge) | ✅ Built |
 
 A device is served by the highest rung it reaches. IR is the backstop that reaches
 everything with an IR receiver.

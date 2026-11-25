@@ -96,6 +96,16 @@ class EndpointClassifier {
       );
     }
 
+    // --- BroadLink WiFi-IR bridge (Phase 2, FR-8) --------------------------
+    if (e.attributes.containsKey('broadlink')) {
+      return const Classification(
+        brand: BrandFamily.other,
+        adapterId: 'broadlink',
+        badges: {_control},
+        confident: true,
+      );
+    }
+
     // Unknown UPnP root / unrecognised service.
     return const Classification(
       brand: BrandFamily.other,

@@ -17,6 +17,8 @@ dependencies:
   pointycastle: ^3.9.1
   sanketa_core:
     path: ../sanketa_core
+  sanketa_ir:
+    path: ../sanketa_ir
 
 dev_dependencies:
   test: ^1.24.0

@@ -508,6 +508,31 @@ class RemoteController extends ChangeNotifier {
         );
         _liveAtvChannel = ch;
         return adapters.FireTvAdapter(channel: ch);
+      case 'broadlink':
+        // BroadLink WiFi-IR bridge. Requires a codeset (selected via the IR
+        // wizard). If no codeset is active, fall through to a default.
+        final blCodeset = activeIrEntry;
+        if (blCodeset != null) {
+          final cs = await irService.loadCodeset(blCodeset);
+          final macStr = d.metadata['mac'] ?? '';
+          final devType = int.tryParse(
+                d.metadata['broadlink_type']?.replaceFirst('0x', '') ?? '',
+                radix: 16,
+              ) ??
+              0;
+          final model = adapters.classifyDeviceType(devType) ??
+              adapters.BroadLinkModel.rmMini3;
+          final mac = macStr.split(':').map((s) => int.tryParse(s, radix: 16) ?? 0);
+          final blDevice = adapters.BroadLinkDevice(
+            host: host,
+            mac: Uint8List.fromList(mac.toList()),
+            deviceType: devType,
+            model: model,
+            name: d.device.friendlyName,
+          );
+          return adapters.BroadLinkAdapter(device: blDevice, codeset: cs);
+        }
+        return DemoAdapter(_record);
       case 'dlna':
         if (await _isAtvrsReachable(host)) {
           _atvrs = _makePairingHelper(host, cert);

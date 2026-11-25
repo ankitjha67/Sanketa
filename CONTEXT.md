@@ -50,7 +50,7 @@ One app that (a) controls **any** TV — network protocols for smart platforms, 
 
 ## 3. Current phase
 
-**Phase: Phase 0 — Hardware Validation (in progress).** The app is running on real hardware. Sony BRAVIA 2 II is the first validated target: Simple IP Control (TCP 20060) delivers keys, and ATVRS pairing over TLS 6467 succeeds. The Android TV / ATVRS pairing protocol has been fully validated end to end on the BRAVIA — all four handshake steps return status 200 and the TV stores the client certificate. Text injection over ATVRS port 6466 is the next validation step. Remaining MVP platforms (Samsung Tizen, LG webOS, Roku) await real hardware. **OD-6 (IR DB sourcing) FULLY RESOLVED:** Kookong cipher cracked, 9,476 codesets + 1,074 Flipper IRDB = **10,550 codesets bundled across 2,907 brands**. Brand database with 1-1 brand-to-details mapping created. **Value-add features F1–F5 UI verified on device (14 Nov 2026):** all 4 Tools sub-features (Debloat, Free TV, TV Stats, App Launcher) render correctly on OnePlus LE2111; functional ADB-connected-to-TV validation remains. **F2 in-app player verified (14 Nov 2026):** `video_player` + `chewie` deliver built-in HLS playback with ExoPlayer; live stream confirmed on device.
+**Phase: Phase 0 HW validation complete; Phase 2 bridge adapters in progress.** The app is running on real hardware (3 TVs validated: Sony BRAVIA 2 II, Haier, Samsung BU8000). ATVRS keyboard typing + submit is the hero feature, fully validated. **Phase 2 WiFi→IR bridge adapters built (25 Nov 2026):** BroadLink RM (local UDP, AES-128-CBC) and SwitchBot Hub (cloud API, opt-in) — 12 adapters total. Manual IR learning built via BroadLink bridge. **OD-6 (IR DB sourcing) FULLY RESOLVED:** 10,550 codesets across 2,907 brands. **Value-add features F1–F5 UI verified on device.** **Feature roadmap added (§12):** 20 prioritised features for Phase 2–3. **v0.1.0 released on GitHub (21 Nov 2026).**
 
 | Gate ahead | Requirement to pass |
 |---|---|
@@ -171,7 +171,7 @@ Status vocabulary: `Not started` · `Spike` · `In progress` · `Built` · `Veri
 | FR-4.4 | D-pad assist fallback (shortest-path arrowing) | P1 | 2 | **Built · unit-tested** — `AssistTyper` over a keyboard grid with wrap optimisation; one OK per char. Pure algorithm, verified |
 | FR-7.2 | Screen mirroring (MediaProjection / ReplayKit) | P1 | 2 | Not started |
 | FR-7.3 | Web video hand-off | P1 | 3 | **Blocked on OD-7** (counsel) |
-| FR-8 | Bridge hardware (BroadLink-class) | P1 | 2 | Not started |
+| FR-8 | Bridge hardware (BroadLink-class) | P1 | 2 | **Built** — BroadLink RM adapter (local UDP, AES-128-CBC, IR send + learn) + SwitchBot Hub adapter (cloud API, opt-in) + BroadLink discovery backend + endpoint classifier + RemoteController wiring |
 | FR-9.1 | Rooms and profiles | P1 | 2 | Not started |
 | FR-9.5 | Backup / encrypted sync | P1 | 2 | Not started |
 | FR-9.2 | Macros / activities | P2 | 3 | Not started |
@@ -214,6 +214,8 @@ Statuses: `Unvalidated` (Phase 0 pending) · `Validated` · `Built` · `Conforma
 | TCL | 2 | Model-routed | per route | Unvalidated |
 | Generic DLNA | 2 | UPnP AVTransport | none | **Adapter built + unit-tested + HW-validated** (4 Nov 2026) — transport + volume + `playUri`; SOAP transport verified on real device (192.168.29.222). UPnP probe succeeds, SOAP faults parsed correctly, human-readable errors mapped (PRD §12.6). Test device has AVTransport but doesn't support casting; need a DLNA renderer that supports playback to validate "now playing" state |
 | DIAL (app launch) | 2 | SSDP + REST | n/a | **Client built + unit-tested (mock HTTP)** — launch/stop/status |
+| BroadLink RM (WiFi→IR bridge) | 2 | UDP 80, AES-128-CBC | IR relay (any TV) | **Built** (25 Nov 2026) — full protocol: discovery (UDP broadcast), auth (AES-128-CBC, initial key + IV), IR send (sub-cmd 0x02), IR learn (sub-cmd 0x03/0x04 poll). Supports RM Mini 3, RM Pro, RM4 Mini, RM4 Pro. `BroadLinkTransmitter` implements `IrTransmitter` for bridge-based IR. Discovery backend self-contained (no circular dep). Endpoint classifier routes `broadlink` attribute → adapter. Wired in `RemoteController`. **Remaining: hardware validation on real BroadLink device** |
+| SwitchBot Hub (WiFi→IR bridge) | 2 | REST `api.switch-bot.com` | IR relay (any TV) | **Built** (25 Nov 2026) — cloud-only adapter (HMAC-SHA256 auth, 10K calls/day rate limit). Sends IR via `/v1.1/devices/{id}/commands` with `customize` command type. No local LAN API (SwitchBot limitation). **Privacy caveat: cloud dependency conflicts with "zero server calls" red line — opt-in only, clearly disclosed to user.** No IR learning support (SwitchBot app only). **Remaining: hardware validation** |
 | Apple TV | P2 research | Companion (reverse-engineered) | — | Not pursued (OD-9) |
 
 ---
@@ -299,7 +301,38 @@ Violating any of these is a defect regardless of what the ticket says.
 
 ---
 
-## 12. Change log
+## 12. Feature roadmap (beyond MVP)
+
+Prioritised feature ideas for Phase 2+. Each is sized relative to the existing architecture — the `ControlAdapter` contract + capability-flag UI pattern means most of these touch zero core code.
+
+| # | Feature | Phase | Effort | Depends on | Description |
+|---|---|---|---|---|---|
+| 1 | **Touchpad / Trackpad Mode** | 2 | M | webOS pointer socket, ATV touch events | Swipe-to-navigate on a touch surface; replaces D-pad for webOS (native pointer) and Android TV (injected touch). Already partially stubbed in FR-5.1 |
+| 2 | **Macro / Scene Automation** | 2 | L | Adapter command queue | Chain commands: "Movie Night" = TV on → HDMI 2 → Soundbar on → dim lights. Timer + conditional triggers. Maps to FR-9.2 |
+| 3 | **Sleep Timer / Auto-Off** | 2 | S | Power command | Schedule power-off after N minutes; optional volume fade-down. Works across all adapters that support `power(off)` |
+| 4 | **Parental Controls** | 2 | M | App launcher (F5) + debloat (F1) | PIN-locked profiles that restrict apps, channels, and time-of-day usage. ADB `pm disable` for hard blocking; soft limits via local schedule |
+| 5 | **Multi-Room Dashboard** | 2 | L | FR-9.1 (rooms) | Control multiple TVs from one screen — volume all, power all, per-room quick-switch. Needs room/profile data model (FR-9.1) |
+| 6 | **Custom Remote Layouts** | 2 | M | — | Drag-and-drop remote button editor. Users arrange buttons per TV; saved as JSON profiles. The capability-flag system already hides unsupported buttons |
+| 7 | **Connection Doctor / Diagnostics** | 2 | M | — | Guided troubleshooting: port scan, protocol probe, firmware sniff, "why can't I connect?" wizard. Maps to FR-10 |
+| 8 | **Screen Mirroring** | 2 | XL | MediaProjection (Android), ReplayKit (iOS) | Cast phone screen to TV via Google Cast or Miracast. DRM-protected apps show black + honest message (red line #5). Maps to FR-7.2 |
+| 9 | **Voice-to-TV** | 2 | M | OS speech service | Phone mic → speech-to-text → `sendText()`. Audio never leaves the device except to OS speech service (red line #1). Maps to FR-4.2 |
+| 10 | **Quick Actions / Command Palette** | 2 | S | — | Swipe-down or long-press for a searchable command palette: "mute", "HDMI 2", "Netflix", "sleep 30m". Keyboard-driven power users |
+| 11 | **TV Usage Analytics / Screen Time** | 3 | M | ADB stats (F4) | Track daily/weekly TV usage, most-used apps, power-on patterns. Local-only (red line #3). Parental controls can reference this data |
+| 12 | **Network Diagnostics** | 3 | S | — | WiFi signal strength, bandwidth test to TV, latency histogram. Useful for debugging cast quality and remote lag |
+| 13 | **Widgets / Quick-Settings Tiles** | 3 | M | Android/iOS platform channels | Home screen widget: power toggle, volume, favourite channel. Android quick-settings tile for mute. Maps to FR-9.3 |
+| 14 | **Wearable Companion** | 3 | L | Wear OS / watchOS SDK | Volume/mute/power from wrist. Minimal surface — the watch is a secondary remote, not a full UI. Maps to FR-9.4 |
+| 15 | **Backup / Encrypted Sync** | 3 | L | E2EE, cloud storage | Cross-device sync of rooms, profiles, macros, IR codesets. End-to-end encrypted; no account for local use (red line #4). Maps to FR-9.5 |
+| 16 | **Search Shortcuts** | 2 | S | Per-adapter deep links | Roku ECP search, Android TV voice intent, webOS search API. Universal "search for X on TV" across all adapters. Maps to FR-4.3 |
+| 17 | **Panasonic Viera Adapter** | 2 | M | SOAP 55000 | SOAP-based control for Panasonic smart TVs. Volume, keys, apps. Text partial (device-dependent) |
+| 18 | **Philips JointSpace Adapter** | 2 | M | REST 1925/1926 | Ambilight control, app launch, volume/keys for Philips Android TVs and older non-Android models |
+| 19 | **Hisense VIDAA Adapter** | 3 | L | MQTT 36669 | MQTT-based protocol for VIDAA OS. Reverse-engineering needed; partial community docs exist |
+| 20 | **Web Video Hand-off** | 3 | M | OD-7 (legal counsel) | Share a URL from phone browser → TV opens it. Blocked on legal review for content redirection. Maps to FR-7.3 |
+
+**Sizing key:** S = < 1 week, M = 1–2 weeks, L = 2–4 weeks, XL = 4+ weeks (solo builder).
+
+---
+
+## 13. Change log
 
 | Date | Change | PRD version | By |
 |---|---|---|---|
@@ -330,11 +363,12 @@ Violating any of these is a defect regardless of what the ticket says.
 | 21 Nov 2026 | **ATVRS IME commit fix — keyboard submit HW-validated on Haier + Samsung.** The previous "Enter types a" fix (DeviceInfo) restored typing but submit still had no effect. Root cause: `editInfo.committed` (field 1) was written as `writeUint(1, 1)` (varint, wire type 0) but the ATVRS proto defines it as a string (wire type 2). The TV silently skipped the malformed field, so the IME composition was never finalized and KEYCODE_ENTER was consumed or ignored. Fix: composing sends `writeString(1, '')` (empty committed); new `buildImeCommit()` / `_sendImeCommit()` sends `writeString(1, text)` with cleared `textFieldStatus.value` to finalize the composition before KEYCODE_ENTER. Changes in `atv_messages.dart`, `android_tv_adapter.dart`, `bravia_atvrs.dart`, `simple_ip_adapter.dart`. **Full type-and-search flow confirmed working on Haier TV and Samsung TV.** All adapter tests pass; analyzer clean. | v0.4 (no requirement change — ATVRS IME commit bug fix, HW-validated) | Claude |
 | 21 Nov 2026 | **Keyboard hide button blank-screen bug fixed and HW-validated.** The keyboard hide icon (down-arrow, `Icons.keyboard_hide`) in `TvKeyboardSheet` called `Navigator.of(context).pop()`, but the keyboard is embedded directly in `RemoteScreen` (not a modal). This popped the app's root route (`AppShell`), leaving a black screen — `PopScope(canPop: false)` only blocks system back gestures, not explicit `Navigator.pop()`. Fix: replaced `Navigator.pop()` with a local `_expanded` state toggle that collapses/expands the keyboard section. When collapsed, only the header ("TV Search & Text Sync") with a keyboard icon remains; tapping it re-expands. Icon swaps between `keyboard_hide` (expanded) and `keyboard` (collapsed). **Reproduced blank screen via ADB, deployed fix, verified collapse/expand cycle on OnePlus LE2111.** | v0.4 (no requirement change — UI bug fix, HW-validated) | Claude |
 | 21 Nov 2026 | **v0.1.0 released on GitHub.** Pushed full monorepo (10,740 files) to `https://github.com/ankitjha67/Sanketa` (private). Created release `v0.1.0` — "Phase 0 Complete: Universal TV Remote Platform" with full release notes covering 10 adapters, 5 value-add features, 3 HW-validated TVs, 311+ tests, 19/24 bugs fixed. README.md rewritten with comprehensive feature table, HW validation matrix, repo layout, coverage ladder, and design red lines. | v0.4 (no requirement change — release milestone) | Claude |
+| 25 Nov 2026 | **Phase 2 WiFi→IR bridge adapters built + feature roadmap added.** BroadLink RM adapter: full LAN protocol (AES-128-CBC crypto, UDP discovery, auth command 0x0065, IR send via sub-command 0x02, IR learn via sub-commands 0x03/0x04 with polling), supports RM Mini 3/Pro/RM4 Mini/RM4 Pro. `BroadLinkTransmitter` implements `IrTransmitter` for bridge-based IR send + learn. BroadLink discovery backend (self-contained, no circular dep). `EndpointClassifier` routes `broadlink` attribute. `RemoteController` wired with adapter factory case. SwitchBot Hub adapter: cloud-only REST (`api.switch-bot.com`, HMAC-SHA256 auth, 10K calls/day), opt-in with privacy disclosure. README updated (12 adapters, coverage ladder rungs 2+1 → Built). **Feature roadmap** (§12): 20 prioritised features for Phase 2–3 added to CONTEXT.md. | v0.4 (no requirement change — Phase 2 bridge adapters + roadmap) | Claude |
 | 14 Nov 2026 | **On-device UI verification of F1–F5 complete.** Deployed release APK to OnePlus LE2111, navigated through all 4 Tools sub-features via ADB tap automation. **F1 TV Debloat:** "Not connected" badge renders (connection-aware gray), 23 bloatware entries with HIGH/MED severity badges, category filter chips (All/Ads/Telemetry/Bloatware/Google/OEM), search bar — all render correctly. **F2 Free TV:** 4-tab layout (Categories/Countries/Languages/Favorites) renders, 27 category source cards load in grid, channel loading spinner and error state with Retry button work correctly; fixed `cat_animation` URL (was `index.category.m3u`, now `categories/animation.m3u`); network errors show human-readable message per PRD §12.6 (VPN/DNS on test phone blocks external fetch — expected). **F4 TV Stats:** "ADB Connection Required" state with gauge icon, explanation text, and cyan Retry button — correct empty state. **F5 App Launcher:** "TV Apps" header with grid icon + refresh button, "No TV connected" empty state — correct. Grid coordinate mapping documented: `childAspectRatio: 1.05` makes cards ~462×440 device pixels; top row y≈260–700, bottom row y≈750–1180. PRD untouched (UI verification, no requirement change). | v0.4 (no requirement change — on-device UI verification) | Claude |
 
 ---
 
-## 13. Toolchain — DECIDED (10 Aug 2026)
+## 14. Toolchain — DECIDED (10 Aug 2026)
 
 **Chosen: install the SDK (Option A).** Product owner selected it.
 
