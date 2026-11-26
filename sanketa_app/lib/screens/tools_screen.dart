@@ -108,6 +108,11 @@ import 'screen_zoom_screen.dart';
 import 'tv_storage_screen.dart';
 import 'channel_recorder_screen.dart';
 import 'family_voting_screen.dart';
+import 'hdmi_switcher_screen.dart';
+import 'tv_cleaner_screen.dart';
+import 'sound_test_screen.dart';
+import 'watch_party_screen.dart';
+import 'tv_shortcuts_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -863,6 +868,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Vote what to watch',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const FamilyVotingScreen()),
+                  ),
+                  // ── batch 19 ──
+                  _ToolCard(
+                    icon: Icons.settings_input_hdmi,
+                    title: 'HDMI Switch',
+                    subtitle: 'Switch inputs',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const HdmiSwitcherScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.cleaning_services,
+                    title: 'TV Cleaner',
+                    subtitle: 'Screen clean mode',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvCleanerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.speaker_group,
+                    title: 'Sound Test',
+                    subtitle: 'Test speakers',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SoundTestScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.groups,
+                    title: 'Watch Party',
+                    subtitle: 'Sync viewing',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const WatchPartyScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.rocket_launch,
+                    title: 'TV Shortcuts',
+                    subtitle: 'Quick launch apps',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvShortcutsScreen()),
                   ),
                 ],
               ),
