@@ -118,6 +118,11 @@ import 'tv_dictionary_screen.dart';
 import 'ambient_sounds_screen.dart';
 import 'channel_lock_screen.dart';
 import 'quick_poll_screen.dart';
+import 'tv_roulette_screen.dart';
+import 'routine_builder_screen.dart';
+import 'signal_meter_screen.dart';
+import 'caption_style_screen.dart';
+import 'find_remote_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -945,6 +950,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Household polls',
                     color: AppColors.alertAmber,
                     onTap: () => _push(context, const QuickPollScreen()),
+                  ),
+                  // ── batch 21 ──
+                  _ToolCard(
+                    icon: Icons.casino,
+                    title: 'TV Roulette',
+                    subtitle: 'Random pick',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvRouletteScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.auto_fix_high,
+                    title: 'Routines',
+                    subtitle: 'Multi-step actions',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RoutineBuilderScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.signal_cellular_alt,
+                    title: 'Signal Meter',
+                    subtitle: 'Connection quality',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const SignalMeterScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.closed_caption,
+                    title: 'Caption Style',
+                    subtitle: 'Subtitle look',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const CaptionStyleScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.notifications_active,
+                    title: 'Find Remote',
+                    subtitle: 'Ring TV speaker',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const FindRemoteScreen()),
                   ),
                 ],
               ),
