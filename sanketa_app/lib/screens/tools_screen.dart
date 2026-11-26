@@ -88,6 +88,11 @@ import 'tv_notifications_screen.dart';
 import 'keyboard_layouts_screen.dart';
 import 'voice_commands_screen.dart';
 import 'multi_device_screen.dart';
+import 'photo_cast_screen.dart';
+import 'tv_alarm_screen.dart';
+import 'quick_notes_screen.dart';
+import 'remote_sharing_screen.dart';
+import 'swipe_remote_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -699,6 +704,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Control many TVs',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const MultiDeviceScreen()),
+                  ),
+                  // ── batch 15 ──
+                  _ToolCard(
+                    icon: Icons.photo_library,
+                    title: 'Photo Cast',
+                    subtitle: 'Cast photos to TV',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const PhotoCastScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.alarm,
+                    title: 'TV Alarm',
+                    subtitle: 'Wake up with TV',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvAlarmScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.sticky_note_2,
+                    title: 'Notes',
+                    subtitle: 'Jot while watching',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const QuickNotesScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.group,
+                    title: 'Share',
+                    subtitle: 'Multi-phone remote',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RemoteSharingScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.swipe,
+                    title: 'Swipe',
+                    subtitle: 'Full-screen gestures',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const SwipeRemoteScreen()),
                   ),
                 ],
               ),
