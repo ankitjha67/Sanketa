@@ -103,6 +103,11 @@ import 'sound_eq_screen.dart';
 import 'remote_log_screen.dart';
 import 'shortcut_widgets_screen.dart';
 import 'cast_timer_screen.dart';
+import 'multi_audio_screen.dart';
+import 'screen_zoom_screen.dart';
+import 'tv_storage_screen.dart';
+import 'channel_recorder_screen.dart';
+import 'family_voting_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -822,6 +827,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Auto-stop casting',
                     color: AppColors.error,
                     onTap: () => _push(context, const CastTimerScreen()),
+                  ),
+                  // ── batch 18 ──
+                  _ToolCard(
+                    icon: Icons.surround_sound,
+                    title: 'Multi Audio',
+                    subtitle: 'Audio tracks',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const MultiAudioScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.zoom_in,
+                    title: 'Screen Zoom',
+                    subtitle: 'Zoom & pan TV',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const ScreenZoomScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.storage,
+                    title: 'TV Storage',
+                    subtitle: 'Manage storage',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvStorageScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.fiber_manual_record,
+                    title: 'Recorder',
+                    subtitle: 'Schedule recordings',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ChannelRecorderScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.how_to_vote,
+                    title: 'Family Vote',
+                    subtitle: 'Vote what to watch',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const FamilyVotingScreen()),
                   ),
                 ],
               ),
