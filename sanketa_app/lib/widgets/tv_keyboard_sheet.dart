@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
@@ -246,6 +247,31 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
     ),
   );
 
+  Future<void> _pasteClipboard(RemoteController c) async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text == null || text.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(const SnackBar(
+            content: Text('Clipboard is empty'),
+            duration: Duration(seconds: 2),
+          ));
+      }
+      return;
+    }
+    c.type(text);
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text('Pasted ${text.length} chars to TV'),
+          duration: const Duration(seconds: 2),
+        ));
+    }
+  }
+
   Widget _cursorBar(RemoteController c) => Row(
     children: [
       Text(
@@ -256,6 +282,30 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
       _miniKey(Icons.chevron_left, () => c.key(core.Key.left)),
       const SizedBox(width: 4),
       _miniKey(Icons.chevron_right, () => c.key(core.Key.right)),
+      const SizedBox(width: 8),
+      _tap(
+        onTap: () => _pasteClipboard(c),
+        child: Container(
+          height: 28,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: hex(AppColors.tertiary).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+            border: Border.all(
+              color: hex(AppColors.tertiary).withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.content_paste, size: 13, color: hex(AppColors.tertiary)),
+              const SizedBox(width: 4),
+              Text('Paste',
+                style: gfont(AppType.labelMonoSm, color: hex(AppColors.tertiary), size: 10, weight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
       const Spacer(),
       Flexible(child: _enterToTv(c)),
     ],

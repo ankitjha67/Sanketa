@@ -58,6 +58,11 @@ import 'notification_manager_screen.dart';
 import 'speed_test_screen.dart';
 import 'power_schedule_screen.dart';
 import 'aspect_ratio_screen.dart';
+import 'mouse_cursor_screen.dart';
+import 'floating_remote_screen.dart';
+import 'tv_screenshot_screen.dart';
+import 'cast_queue_screen.dart';
+import 'connection_pulse_screen.dart';
 import 'rooms_screen.dart';
 import 'scheduled_actions_screen.dart';
 import 'screen_mirror_screen.dart';
@@ -69,6 +74,20 @@ import 'video_handoff_screen.dart';
 import 'voice_screen.dart';
 import 'wearable_screen.dart';
 import 'widget_config_screen.dart';
+import 'deep_link_screen.dart';
+import 'wakelock_screen.dart';
+import 'audio_output_screen.dart';
+import 'qr_connect_screen.dart';
+import 'text_templates_screen.dart';
+import 'haptic_feedback_screen.dart';
+import 'device_info_screen.dart';
+import 'auto_scroll_screen.dart';
+import 'screen_saver_screen.dart';
+import 'quick_settings_screen.dart';
+import 'tv_notifications_screen.dart';
+import 'keyboard_layouts_screen.dart';
+import 'voice_commands_screen.dart';
+import 'multi_device_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -544,6 +563,142 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Screen format',
                     color: AppColors.secondary,
                     onTap: () => _push(context, const AspectRatioScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.mouse,
+                    title: 'Mouse',
+                    subtitle: 'Cursor pointer mode',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const MouseCursorScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.picture_in_picture_alt,
+                    title: 'Floating',
+                    subtitle: 'Overlay mini remote',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const FloatingRemoteScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.screenshot_monitor,
+                    title: 'TV Shot',
+                    subtitle: 'Capture TV screen',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvScreenshotScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.queue_music,
+                    title: 'Cast Queue',
+                    subtitle: 'Media playlist cast',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const CastQueueScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.monitor_heart,
+                    title: 'Pulse',
+                    subtitle: 'Live signal health',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ConnectionPulseScreen()),
+                  ),
+                  // ── batch 12 ──
+                  _ToolCard(
+                    icon: Icons.link,
+                    title: 'Deep Link',
+                    subtitle: 'Send URLs to TV',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const DeepLinkScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.visibility,
+                    title: 'Wakelock',
+                    subtitle: 'Keep screen on',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const WakelockScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.speaker_group,
+                    title: 'Audio Out',
+                    subtitle: 'TV audio routing',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const AudioOutputScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.qr_code_scanner,
+                    title: 'QR Connect',
+                    subtitle: 'Scan to pair TV',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const QrConnectScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.text_snippet,
+                    title: 'Templates',
+                    subtitle: 'Quick text snippets',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const TextTemplatesScreen()),
+                  ),
+                  // ── batch 13 ──
+                  _ToolCard(
+                    icon: Icons.vibration,
+                    title: 'Haptics',
+                    subtitle: 'Vibration feedback',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const HapticFeedbackScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.info_outline,
+                    title: 'Device Info',
+                    subtitle: 'TV hardware details',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const DeviceInfoScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.swap_vert,
+                    title: 'Auto Scroll',
+                    subtitle: 'Timed page scroll',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const AutoScrollScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.wallpaper,
+                    title: 'Screen Saver',
+                    subtitle: 'Ambient display',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ScreenSaverScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.tune,
+                    title: 'Quick Panel',
+                    subtitle: 'TV control center',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const QuickSettingsScreen()),
+                  ),
+                  // ── batch 14 ──
+                  _ToolCard(
+                    icon: Icons.notifications_active,
+                    title: 'TV Alerts',
+                    subtitle: 'Notification hub',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const TvNotificationsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.keyboard,
+                    title: 'Layouts',
+                    subtitle: 'Keyboard languages',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const KeyboardLayoutsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.record_voice_over,
+                    title: 'Voice Cmds',
+                    subtitle: 'Speak to control',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const VoiceCommandsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.devices,
+                    title: 'Multi-Device',
+                    subtitle: 'Control many TVs',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const MultiDeviceScreen()),
                   ),
                 ],
               ),
