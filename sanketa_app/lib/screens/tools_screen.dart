@@ -128,6 +128,11 @@ import 'volume_scheduler_screen.dart';
 import 'input_labeler_screen.dart';
 import 'mirror_qr_screen.dart';
 import 'remote_trainer_screen.dart';
+import 'gesture_recorder_screen.dart';
+import 'tv_workout_screen.dart';
+import 'audio_delay_screen.dart';
+import 'remote_battery_screen.dart';
+import 'channel_sort_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -1027,6 +1032,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Learn controls',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const RemoteTrainerScreen()),
+                  ),
+                  // ── batch 23 ──
+                  _ToolCard(
+                    icon: Icons.fiber_manual_record,
+                    title: 'Gesture Recorder',
+                    subtitle: 'Record macros',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const GestureRecorderScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.fitness_center,
+                    title: 'TV Workout',
+                    subtitle: 'Exercise guide',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvWorkoutScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.graphic_eq,
+                    title: 'Audio Delay',
+                    subtitle: 'Fix lip sync',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const AudioDelayScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.battery_5_bar,
+                    title: 'Remote Battery',
+                    subtitle: 'Battery monitor',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const RemoteBatteryScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.sort,
+                    title: 'Channel Sort',
+                    subtitle: 'Reorder favorites',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ChannelSortScreen()),
                   ),
                 ],
               ),
