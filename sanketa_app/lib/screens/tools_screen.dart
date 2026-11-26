@@ -98,6 +98,11 @@ import 'countdown_timer_screen.dart';
 import 'ip_camera_screen.dart';
 import 'weather_display_screen.dart';
 import 'content_bookmarks_screen.dart';
+import 'tv_trivia_screen.dart';
+import 'sound_eq_screen.dart';
+import 'remote_log_screen.dart';
+import 'shortcut_widgets_screen.dart';
+import 'cast_timer_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -781,6 +786,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Content watch list',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const ContentBookmarksScreen()),
+                  ),
+                  // ── batch 17 ──
+                  _ToolCard(
+                    icon: Icons.quiz,
+                    title: 'Trivia',
+                    subtitle: 'TV quiz game',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvTriviaScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.equalizer,
+                    title: 'Sound EQ',
+                    subtitle: 'Audio equalizer',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SoundEqScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.history,
+                    title: 'Remote Log',
+                    subtitle: 'Command history',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const RemoteLogScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.widgets,
+                    title: 'Widgets',
+                    subtitle: 'Quick action config',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const ShortcutWidgetsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.timer,
+                    title: 'Cast Timer',
+                    subtitle: 'Auto-stop casting',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const CastTimerScreen()),
                   ),
                 ],
               ),
