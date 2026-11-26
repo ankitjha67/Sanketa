@@ -123,6 +123,11 @@ import 'routine_builder_screen.dart';
 import 'signal_meter_screen.dart';
 import 'caption_style_screen.dart';
 import 'find_remote_screen.dart';
+import 'movie_trivia_screen.dart';
+import 'volume_scheduler_screen.dart';
+import 'input_labeler_screen.dart';
+import 'mirror_qr_screen.dart';
+import 'remote_trainer_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -986,6 +991,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Ring TV speaker',
                     color: AppColors.error,
                     onTap: () => _push(context, const FindRemoteScreen()),
+                  ),
+                  // ── batch 22 ──
+                  _ToolCard(
+                    icon: Icons.quiz,
+                    title: 'Movie Trivia',
+                    subtitle: 'TV quiz game',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const MovieTriviaScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.schedule,
+                    title: 'Volume Schedule',
+                    subtitle: 'Time-based vol',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const VolumeSchedulerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.label,
+                    title: 'Input Labeler',
+                    subtitle: 'Name HDMI ports',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const InputLabelerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.qr_code_2,
+                    title: 'Mirror QR',
+                    subtitle: 'Screen mirroring',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const MirrorQrScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.school,
+                    title: 'Remote Trainer',
+                    subtitle: 'Learn controls',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const RemoteTrainerScreen()),
                   ),
                 ],
               ),
