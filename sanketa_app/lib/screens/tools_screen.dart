@@ -113,6 +113,11 @@ import 'tv_cleaner_screen.dart';
 import 'sound_test_screen.dart';
 import 'watch_party_screen.dart';
 import 'tv_shortcuts_screen.dart';
+import 'screen_rotate_screen.dart';
+import 'tv_dictionary_screen.dart';
+import 'ambient_sounds_screen.dart';
+import 'channel_lock_screen.dart';
+import 'quick_poll_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -904,6 +909,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Quick launch apps',
                     color: AppColors.alertAmber,
                     onTap: () => _push(context, const TvShortcutsScreen()),
+                  ),
+                  // ── batch 20 ──
+                  _ToolCard(
+                    icon: Icons.screen_rotation,
+                    title: 'Screen Rotate',
+                    subtitle: 'Rotate display',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ScreenRotateScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.menu_book,
+                    title: 'TV Dictionary',
+                    subtitle: 'Look up words',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvDictionaryScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.spa,
+                    title: 'Ambient Sound',
+                    subtitle: 'Relaxing audio',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const AmbientSoundsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.lock,
+                    title: 'Channel Lock',
+                    subtitle: 'PIN-lock channels',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ChannelLockScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.poll,
+                    title: 'Quick Poll',
+                    subtitle: 'Household polls',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const QuickPollScreen()),
                   ),
                 ],
               ),
