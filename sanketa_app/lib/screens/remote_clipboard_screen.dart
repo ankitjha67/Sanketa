@@ -100,7 +100,7 @@ class _RemoteClipboardScreenState extends State<RemoteClipboardScreen> {
   }
 
   void _sendToTv(String text) {
-    RemoteScope.of(context).type(text);
+    RemoteScope.of(context).paste(text);
   }
 
   void _copyToPhone(String text) {

@@ -25,6 +25,11 @@ class RemoteField {
   static const int imeShowRequest = 22;
   static const int remoteStart = 40;
   static const int setVolumeLevel = 50;
+  static const int voiceBegin = 30; // FLAGGED: validate Phase 0
+  static const int voicePayload = 31; // FLAGGED: validate Phase 0
+  static const int voiceEnd = 32; // FLAGGED: validate Phase 0
+  static const int setAudioDevice = 60; // FLAGGED: validate Phase 0
+  static const int resetAudioDevice = 61; // FLAGGED: validate Phase 0
   static const int appLinkLaunch = 90;
 
   // Pairing message set (separate 6467 connection):
@@ -106,6 +111,38 @@ Uint8List buildAppLink(String link) {
 Uint8List buildPingResponse(int value) {
   final inner = ProtoWriter()..writeUint(1, value);
   return (ProtoWriter()..writeMessage(RemoteField.pingResponse, inner))
+      .toBytes();
+}
+
+/// RemoteMessage{ remote_set_preferred_audio_device { device_id } }.
+/// Tells the TV to route audio to the specified output device. FLAGGED for Phase 0.
+Uint8List buildSetAudioDevice(String deviceId) {
+  final inner = ProtoWriter()..writeString(1, deviceId);
+  return (ProtoWriter()..writeMessage(RemoteField.setAudioDevice, inner))
+      .toBytes();
+}
+
+/// RemoteMessage{ remote_reset_preferred_audio_device { } }.
+/// Reverts audio routing to the TV's default output. FLAGGED for Phase 0.
+Uint8List buildResetAudioDevice() {
+  final inner = ProtoWriter();
+  return (ProtoWriter()..writeMessage(RemoteField.resetAudioDevice, inner))
+      .toBytes();
+}
+
+/// RemoteMessage{ remote_voice_begin { } }.
+/// Signals the TV that voice audio streaming is starting. FLAGGED for Phase 0.
+Uint8List buildVoiceBegin() {
+  final inner = ProtoWriter();
+  return (ProtoWriter()..writeMessage(RemoteField.voiceBegin, inner))
+      .toBytes();
+}
+
+/// RemoteMessage{ remote_voice_end { } }.
+/// Signals the TV that voice audio streaming has stopped. FLAGGED for Phase 0.
+Uint8List buildVoiceEnd() {
+  final inner = ProtoWriter();
+  return (ProtoWriter()..writeMessage(RemoteField.voiceEnd, inner))
       .toBytes();
 }
 

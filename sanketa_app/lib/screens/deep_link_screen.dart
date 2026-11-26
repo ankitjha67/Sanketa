@@ -88,7 +88,7 @@ class _DeepLinkScreenState extends State<DeepLinkScreen> {
         ..showSnackBar(const SnackBar(content: Text('Enter a valid URL (https://...)')));
       return;
     }
-    RemoteScope.of(context).type(url);
+    RemoteScope.of(context).launch(url);
     setState(() {
       _history.insert(0, _LinkEntry(url: url, sentAt: DateTime.now()));
       if (_history.length > 20) _history = _history.sublist(0, 20);

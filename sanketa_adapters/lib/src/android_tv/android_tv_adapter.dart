@@ -189,6 +189,13 @@ class AndroidTvAdapter extends ControlAdapter {
   @override
   Future<AppRef?> getCurrentApp() async => null;
 
+  @override
+  Future<CommandResult> setAudioDevice(String deviceId) =>
+      _send(buildSetAudioDevice(deviceId));
+
+  @override
+  Future<CommandResult> resetAudioDevice() => _send(buildResetAudioDevice());
+
   void _subscribeToMessages() {
     _messageSub?.cancel();
     _messageSub = _channel.messages.listen((msg) {

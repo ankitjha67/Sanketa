@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sanketa_design/sanketa_design.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../theme/tokens_x.dart';
 
@@ -48,6 +49,7 @@ class _WakelockScreenState extends State<WakelockScreen> {
         _brightness = (j['brightness'] as num?)?.toDouble() ?? 0.7;
       }
     } on Object { /* defaults */ }
+    if (_enabled) WakelockPlus.enable();
     if (mounted) setState(() {});
   }
 
@@ -151,6 +153,11 @@ class _WakelockScreenState extends State<WakelockScreen> {
           activeTrackColor: hex(AppColors.primary),
           onChanged: (v) {
             setState(() => _enabled = v);
+            if (v) {
+              WakelockPlus.enable();
+            } else {
+              WakelockPlus.disable();
+            }
             _save();
           },
         ),

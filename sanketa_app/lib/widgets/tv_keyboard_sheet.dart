@@ -261,7 +261,7 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
       }
       return;
     }
-    c.type(text);
+    c.paste(text);
     if (mounted) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()

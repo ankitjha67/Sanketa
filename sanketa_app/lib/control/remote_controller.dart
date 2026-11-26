@@ -1222,6 +1222,15 @@ class RemoteController extends ChangeNotifier {
     _enqueueTextOp(const core.TextOp.delete());
   }
 
+  void paste(String text) {
+    if (hapticEnabled) HapticFeedback.selectionClick();
+    tvText = text;
+    notifyListeners();
+    _record('paste: ${text.length} chars');
+    _enqueueTextOp(const core.TextOp.clear());
+    _enqueueTextOp(core.TextOp.insert(text));
+  }
+
   void clearText() {
     tvText = '';
     notifyListeners();
@@ -1260,6 +1269,20 @@ class RemoteController extends ChangeNotifier {
   void setNavIndex(int index) {
     navIndex = index;
     notifyListeners();
+  }
+
+  // --- Audio device routing (competitor gap P4) ------------------------------
+
+  void setAudioDevice(String deviceId) {
+    if (hapticEnabled) HapticFeedback.lightImpact();
+    unawaited(_sendCommand(_adapter.setAudioDevice(deviceId),
+        showFirstFailure: true));
+  }
+
+  void resetAudioDevice() {
+    if (hapticEnabled) HapticFeedback.lightImpact();
+    unawaited(_sendCommand(_adapter.resetAudioDevice(),
+        showFirstFailure: true));
   }
 
   // --- Casting (FR-7.1) -----------------------------------------------------

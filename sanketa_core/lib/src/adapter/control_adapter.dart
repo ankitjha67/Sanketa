@@ -99,4 +99,15 @@ abstract class ControlAdapter {
 
   /// Query currently active app. Returns null if unsupported.
   Future<AppRef?> getCurrentApp() async => null;
+
+  // --- Audio routing (competitor gap P4) ------------------------------------
+
+  /// Route audio to a specific output device. Returns failure on adapters that
+  /// don't support audio device routing.
+  Future<CommandResult> setAudioDevice(String deviceId) async =>
+      const CommandResult.failure('audio device routing not supported');
+
+  /// Revert audio routing to the TV's default output.
+  Future<CommandResult> resetAudioDevice() async =>
+      const CommandResult.failure('audio device routing not supported');
 }

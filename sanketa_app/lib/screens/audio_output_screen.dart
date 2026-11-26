@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 
 class _AudioOutput {
@@ -124,7 +125,10 @@ class _AudioOutputScreenState extends State<AudioOutputScreen> {
     final o = _outputs[index];
     final active = index == _selectedIndex;
     return GestureDetector(
-      onTap: o.connected ? () => setState(() => _selectedIndex = index) : null,
+      onTap: o.connected ? () {
+        setState(() => _selectedIndex = index);
+        RemoteScope.of(context).setAudioDevice(o.name);
+      } : null,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(

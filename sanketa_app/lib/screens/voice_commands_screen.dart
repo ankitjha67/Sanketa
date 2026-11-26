@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 
 class VoiceCommandsScreen extends StatefulWidget {
@@ -162,15 +164,58 @@ class _VoiceCommandsScreenState extends State<VoiceCommandsScreen> {
     ),
   );
 
+  void _executeCommand(String command) {
+    final rc = RemoteScope.of(context);
+    switch (command) {
+      case 'Go home':
+        rc.key(core.Key.home);
+      case 'Go back':
+        rc.key(core.Key.back);
+      case 'Open settings':
+        rc.key(core.Key.menu);
+      case 'Scroll down':
+        rc.key(core.Key.down);
+        rc.key(core.Key.down);
+        rc.key(core.Key.down);
+      case 'Play':
+        rc.key(core.Key.play);
+      case 'Pause':
+        rc.key(core.Key.pause);
+      case 'Next episode':
+        rc.key(core.Key.next);
+      case 'Volume up':
+        rc.key(core.Key.volumeUp);
+        rc.key(core.Key.volumeUp);
+      case 'Volume down':
+        rc.key(core.Key.volumeDown);
+        rc.key(core.Key.volumeDown);
+      case 'Mute':
+        rc.key(core.Key.mute);
+      case 'Open YouTube':
+        rc.launch('YouTube');
+      case 'Open Netflix':
+        rc.launch('Netflix');
+      case 'Open Spotify':
+        rc.launch('Spotify');
+      case 'Power off':
+        rc.key(core.Key.power);
+      case 'Sleep timer 30 minutes':
+        rc.key(core.Key.power);
+      case 'Take screenshot':
+        rc.key(core.Key.info);
+      case 'Switch to HDMI 1':
+        rc.key(core.Key.input);
+    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text('Sent: "$command"'),
+        duration: const Duration(seconds: 1),
+      ));
+  }
+
   Widget _commandCard((String, String, String, IconData) cmd) => GestureDetector(
-    onTap: () {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: Text('Executing: "${cmd.$1}"'),
-          duration: const Duration(seconds: 1),
-        ));
-    },
+    onTap: () => _executeCommand(cmd.$1),
     child: Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
