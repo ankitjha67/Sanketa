@@ -93,6 +93,11 @@ import 'tv_alarm_screen.dart';
 import 'quick_notes_screen.dart';
 import 'remote_sharing_screen.dart';
 import 'swipe_remote_screen.dart';
+import 'tv_calendar_screen.dart';
+import 'countdown_timer_screen.dart';
+import 'ip_camera_screen.dart';
+import 'weather_display_screen.dart';
+import 'content_bookmarks_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -740,6 +745,42 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Full-screen gestures',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const SwipeRemoteScreen()),
+                  ),
+                  // ── batch 16 ──
+                  _ToolCard(
+                    icon: Icons.calendar_month,
+                    title: 'Calendar',
+                    subtitle: 'TV viewing reminders',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvCalendarScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.timer,
+                    title: 'Timer',
+                    subtitle: 'Countdown & stopwatch',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const CountdownTimerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.videocam,
+                    title: 'Cameras',
+                    subtitle: 'IP camera viewer',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const IpCameraScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.cloud,
+                    title: 'Weather',
+                    subtitle: 'Weather dashboard',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const WeatherDisplayScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bookmark,
+                    title: 'Bookmarks',
+                    subtitle: 'Content watch list',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const ContentBookmarksScreen()),
                   ),
                 ],
               ),
