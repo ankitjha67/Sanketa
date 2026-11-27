@@ -319,19 +319,20 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
         color: hex(AppColors.primaryContainer),
         borderRadius: BorderRadius.circular(AppRadii.sm),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.keyboard_return,
-            size: 14,
-            color: hex(AppColors.onPrimaryContainer),
-          ),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.keyboard_return,
+              size: 14,
+              color: hex(AppColors.onPrimaryContainer),
+            ),
+            const SizedBox(width: 4),
+            Text(
               'Enter to TV',
-              overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: gfont(
                 AppType.bodySm,
@@ -339,8 +340,8 @@ class _TvKeyboardSheetState extends State<TvKeyboardSheet> {
                 weight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
