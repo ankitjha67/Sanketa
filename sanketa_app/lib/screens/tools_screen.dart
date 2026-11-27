@@ -230,6 +230,12 @@ import 'remote_shake_screen.dart';
 import 'channel_package_screen.dart';
 import 'tv_ambient_screen.dart';
 import 'voice_feedback_screen.dart';
+// ── batch 43 imports ──
+import 'tv_parental_schedule_screen.dart';
+import 'remote_touchbar_screen.dart';
+import 'tv_playlist_screen.dart';
+import 'power_cycle_screen.dart';
+import 'screen_burn_fix_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1813,6 +1819,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Audio announce',
                     color: AppColors.tertiary,
                     onTap: () => _push(context, const VoiceFeedbackScreen()),
+                  ),
+                  // ── batch 43 ──
+                  _ToolCard(
+                    icon: Icons.schedule,
+                    title: 'Parental Sched',
+                    subtitle: 'Time blocks',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvParentalScheduleScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.space_bar,
+                    title: 'Touchbar',
+                    subtitle: 'Quick shortcuts',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RemoteTouchbarScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.playlist_play,
+                    title: 'TV Playlist',
+                    subtitle: 'Channel queue',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvPlaylistScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.restart_alt,
+                    title: 'Power Cycle',
+                    subtitle: 'Reboot TV',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const PowerCycleScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.monitor_heart,
+                    title: 'Burn Fix',
+                    subtitle: 'Pixel refresh',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const ScreenBurnFixScreen()),
                   ),
   ];
 
