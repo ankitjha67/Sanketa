@@ -133,6 +133,16 @@ import 'tv_workout_screen.dart';
 import 'audio_delay_screen.dart';
 import 'remote_battery_screen.dart';
 import 'channel_sort_screen.dart';
+import 'pip_mode_screen.dart';
+import 'remote_sounds_screen.dart';
+import 'tv_brightness_screen.dart';
+import 'watch_history_screen.dart';
+import 'parental_report_screen.dart';
+import 'tv_magnifier_screen.dart';
+import 'sound_profile_screen.dart';
+import 'channel_map_screen.dart';
+import 'screen_dimmer_screen.dart';
+import 'gesture_library_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -1068,6 +1078,78 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Reorder favorites',
                     color: AppColors.secondary,
                     onTap: () => _push(context, const ChannelSortScreen()),
+                  ),
+                  // ── batch 24 ──
+                  _ToolCard(
+                    icon: Icons.picture_in_picture_alt,
+                    title: 'PIP Mode',
+                    subtitle: 'Picture-in-picture',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const PipModeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.music_note,
+                    title: 'Remote Sounds',
+                    subtitle: 'Button sound FX',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RemoteSoundsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.brightness_6,
+                    title: 'TV Brightness',
+                    subtitle: 'Display controls',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvBrightnessScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.history,
+                    title: 'Watch History',
+                    subtitle: 'Viewing log',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const WatchHistoryScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.family_restroom,
+                    title: 'Parental Report',
+                    subtitle: 'Weekly stats',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const ParentalReportScreen()),
+                  ),
+                  // ── batch 25 ──
+                  _ToolCard(
+                    icon: Icons.zoom_in,
+                    title: 'TV Magnifier',
+                    subtitle: 'Screen zoom',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvMagnifierScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.equalizer,
+                    title: 'Sound Profile',
+                    subtitle: 'Audio presets',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SoundProfileScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.map,
+                    title: 'Channel Map',
+                    subtitle: 'Visual guide',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const ChannelMapScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.brightness_3,
+                    title: 'Screen Dimmer',
+                    subtitle: 'Night brightness',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ScreenDimmerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.gesture,
+                    title: 'Gesture Library',
+                    subtitle: 'Learn gestures',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const GestureLibraryScreen()),
                   ),
                 ],
               ),
