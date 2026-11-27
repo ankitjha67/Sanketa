@@ -11,16 +11,16 @@ media to the screen.
 
 ## Status
 
-🟢 **Phase 0 hardware validation complete on 3 TVs (Haier, Samsung BU8000, Sony BRAVIA 2 II).**
+🟢 **Phase 2+3 features complete. Hardware validated on 3 TVs (Haier, Samsung BU8000, Sony BRAVIA 2 II).**
 
 - **411+ tests passing** across 7 packages, all analyzers clean
-- **69 tool cards** in the Tools grid covering remote control, diagnostics, parental, accessibility, gaming, casting, and TV management
-- **17 core screens**: Remote, Search, Cast, Tools, Devices, Settings + Debloat, IPTV, Performance, App Launcher, Macros, Touchpad, Connection Doctor, Custom Layouts, Search Shortcuts
-- **52 beyond-roadmap feature screens** across 12 batches (see Tools section below)
-- **14 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge, Panasonic Viera, Philips JointSpace
+- **220 tool cards** in the searchable Tools grid covering remote control, diagnostics, parental, accessibility, gaming, casting, TV management, and 200+ beyond-roadmap features
+- **17 core screens + 200+ feature screens**: Remote, Search, Cast, Tools, Devices, Settings + 41 batches of companion tools
+- **15 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge, Panasonic Viera, Philips JointSpace, Hisense VIDAA (MQTT)
 - **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong decrypted database)
 - **5 value-add features (F1–F5)** built, integrated, and UI-verified on device
 - **ATVRS keyboard typing** (the hero feature) fully hardware-validated: type on phone → see it on TV → submit search
+- **Auto Channel Switch** — event-based auto-tuner for scheduled broadcasts (user-requested feature)
 
 ## Key features
 
@@ -48,26 +48,22 @@ media to the screen.
 | **Panasonic Viera** | SOAP control on port 55000, PIN pairing | ✅ Built |
 | **Philips JointSpace** | REST v6 control, Digest auth pairing | ✅ Built |
 
-## Tools grid (69 features)
+## Tools grid (220 features)
 
-The Tools screen exposes a growing grid of TV companion utilities, all built with the OmniBeam design system and wired to `RemoteScope`. Batch 12 features were identified through competitor gap analysis (Remote ATV, 10M+ downloads) and built as fully original implementations:
+The Tools screen exposes a searchable grid of 220 TV companion utilities, all built with the OmniBeam design system and wired to `RemoteScope`. Every screen persists settings locally as JSON, never sends data off-device, and passes analysis clean.
 
 | Batch | Features |
 |---|---|
 | Core | Debloat, TV Stats, App Launcher, Doctor, Macros, Touchpad, Shortcuts, Layouts, Screen Mirror, Rooms, Usage Analytics, Video Hand-off, Widgets, Wearable, Voice, Backup |
-| 1 | Favourite Channels, Gesture Shortcuts, Scheduled Actions |
-| 2 | Quick Text, HDMI Manager, Activity History, Remote Profiles |
-| 3 | Night Mode, Button Mapper, CEC Devices, Universal Search |
-| 5 | Remote Lock, Picture Settings, Sound Settings, Share Setup, Game Pad |
-| 6 | Ambient Display, Subtitle Manager, Quick Dashboard, Motion Control, Channel Guide |
-| 7 | Parental Timer, Accessibility, Remote Themes, Volume Limiter, Wake-on-LAN |
-| 8 | Quick Dial Pad, Media Info, Screen Timeout, Energy Monitor, IR Learning |
-| 9 | Sleep Sounds, Multi-TV Switcher, Input Rename, Diagnostic Log, Colour Test Patterns |
-| 10 | Child Profile, Network Info, TV App Manager, Remote Clipboard, Whistle Finder |
-| 11 | Firmware Info, Notification Manager, Speed Test, Power Schedule, Aspect Ratio |
-| 12 | Mouse Cursor, Floating Remote, TV Screenshot, Cast Queue, Connection Pulse |
-
-All feature screens persist settings locally as JSON, never send data off-device, and pass analysis clean.
+| 1–5 | Favourite Channels, Gesture Shortcuts, Quick Text, HDMI Manager, Activity History, Remote Profiles, Night Mode, Button Mapper, CEC Devices, Universal Search, Remote Lock, Picture Settings, Sound Settings, Share Setup, Game Pad |
+| 6–10 | Ambient Display, Subtitle Manager, Quick Dashboard, Motion Control, Channel Guide, Parental Timer, Accessibility, Remote Themes, Volume Limiter, Wake-on-LAN, Dial Pad, Media Info, Screen Timeout, Energy Monitor, IR Learning, Sleep Sounds, Multi-TV Switcher, Input Rename, Diagnostic Log, Colour Test, Child Profile, Network Info, App Manager, Clipboard, Whistle Finder |
+| 11–15 | Firmware Info, Notification Manager, Speed Test, Power Schedule, Aspect Ratio, Mouse Cursor, Floating Remote, TV Screenshot, Cast Queue, Connection Pulse, Remote Battery, Smart Suggest, TV Calendar, Status Bar, App Timer, Screen Mirror+, Zoom Control, Audio Delay, Remote Cloner, TV Roulette |
+| 16–20 | TV Trivia, Screen Dimmer, Sound Booster, Remote Radar, Channel Surfboard, IR Blaster Hub, TV Color Tune, Remote Keyboard+, Smart Volume, App Shortcuts, Gesture Library, Find Remote, Input Labeler, Remote Training, Screen Saver |
+| 21–25 | Channel Map, TV Magnifier, Remote Log, Screen Freeze, Quick Pair, Remote Vibrate, Channel Blocker, TV Wallpaper, Quick Switch, Screen Annotate |
+| 26–30 | Voice Macro, Network Block, Cast History, LED Control, Vibrate Profiles, Smart Home Hub, Media Server, Bandwidth Monitor, Sleep Routine, Channel Preview |
+| 31–35 | TV Bingo, Eco Mode, Couch Buzz, Stream Radar, Watch Later, Focus Timer, Noise Gate, Sleep Fade, Parental PIN, TV Karaoke, Remote Compass, App Usage, Quick Translate, TV Health Check, Remote Scheduler, Sound Zones, Screen Split, Content Filter, Macro Pad, TV Weather, Sound EQ Pro, Fav Channels, Screen Record |
+| 36–41 | Sports Score, Room Light, Power Stats, Channel Filter, Macro Runner, Audio Mixer, Cinema Mode, TV Standby, Universal Remote, Notifications, Channel History, Subtitle Style, Sound Mode, TV Info, Gesture Pro, TV Alarm, Audio Viz, Channel Schedule, TV Theme, Network Speed, Input Switch, Voice Assistant, Remote Finder, TV Timer, Ambient Light, Quick Launch, TV Diagnostics, TV Quiz, Remote Shake, Channel Package, TV Ambient, Voice Feedback |
+| Special | **Auto Channel Switch** — event-based auto-tuner for scheduled broadcasts (sports, news, movies) |
 
 ## Screenshots
 
@@ -132,10 +128,10 @@ SANKETA/
 │     ├─ assist/         D-pad shortest-path typing
 │     └─ irdb/           10,550 codesets (Flipper + Kookong)
 ├─ sanketa_design/       OmniBeam design tokens (colours · type · spacing · elevation)
-├─ sanketa_app/          Flutter app — 69 tool cards + 6 core tabs
+├─ sanketa_app/          Flutter app — 220 tool cards + 6 core tabs
 │  └─ lib/
 │     ├─ control/        RemoteController, MacroService, SleepTimerService, CustomLayoutService
-│     ├─ screens/        Remote, Search, Cast, Tools (64 features), Devices, Settings
+│     ├─ screens/        Remote, Search, Cast, Tools (220 features), Devices, Settings
 │     ├─ widgets/        TvKeyboardSheet, RemotePad, ConnectionBar, TouchpadSurface,
 │     │                  QuickActionsSheet, SleepTimerSheet, SearchShortcutsWidget
 │     ├─ theme/          OmniBeam dark theme
@@ -196,7 +192,10 @@ code (NFR-14). That contract is the moat.
 
 ## Recent changes (Nov 2026)
 
-- **69 tool cards** across 12 beyond-roadmap feature batches in the Tools grid
+- **220 tool cards** across 41 beyond-roadmap feature batches in the searchable Tools grid
+- **Auto Channel Switch** — event-based channel auto-tuner (user-requested feature)
+- **Touchpad scroll fix** — touchpad swipes no longer conflict with page scrolling
+- **Hisense VIDAA adapter** — MQTT-based control, 15th platform adapter
 - **411 tests passing** (core 80, adapters 228, design 12, IR 72, app 19)
 - **15 keyboard languages** including Hindi, Arabic (RTL), Korean, Japanese, Thai
 - **Native Android platform features**: permissions, share intent, AppWidget, TOFU cert store
