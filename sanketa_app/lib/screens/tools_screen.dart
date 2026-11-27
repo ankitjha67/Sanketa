@@ -172,6 +172,14 @@ import 'eco_mode_screen.dart';
 import 'couch_buzz_screen.dart';
 import 'stream_radar_screen.dart';
 import 'watch_later_screen.dart';
+import 'focus_timer_screen.dart';
+import 'noise_gate_screen.dart';
+import 'sleep_fade_screen.dart';
+import 'parental_pin_screen.dart';
+import 'tv_karaoke_screen.dart';
+import 'remote_compass_screen.dart';
+import 'app_usage_chart_screen.dart';
+import 'quick_translate_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1387,6 +1395,64 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Queue manager',
                     color: AppColors.alertAmber,
                     onTap: () => _push(context, const WatchLaterScreen()),
+                  ),
+                  // ── batch 32 ──
+                  _ToolCard(
+                    icon: Icons.self_improvement,
+                    title: 'Focus Timer',
+                    subtitle: 'Pomodoro focus',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const FocusTimerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.noise_aware,
+                    title: 'Noise Gate',
+                    subtitle: 'Auto-mute loud',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const NoiseGateScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bedtime,
+                    title: 'Sleep Fade',
+                    subtitle: 'Volume fade-out',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const SleepFadeScreen()),
+                  ),
+                  // ── batch 33 ──
+                  _ToolCard(
+                    icon: Icons.pin,
+                    title: 'Parental PIN',
+                    subtitle: 'PIN lock',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ParentalPinScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.mic,
+                    title: 'TV Karaoke',
+                    subtitle: 'Sing along',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const TvKaraokeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.explore,
+                    title: 'Remote Compass',
+                    subtitle: 'D-pad orient',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const RemoteCompassScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bar_chart,
+                    title: 'App Usage',
+                    subtitle: 'Usage chart',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const AppUsageChartScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.translate,
+                    title: 'Quick Translate',
+                    subtitle: 'Translate & send',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const QuickTranslateScreen()),
                   ),
   ];
 
