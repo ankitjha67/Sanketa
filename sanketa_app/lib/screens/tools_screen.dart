@@ -224,6 +224,12 @@ import 'ambient_light_screen.dart';
 import 'quick_launch_screen.dart';
 import 'tv_diagnostic_screen.dart';
 import 'auto_channel_switch_screen.dart';
+// ── batch 42 imports ──
+import 'tv_quiz_screen.dart';
+import 'remote_shake_screen.dart';
+import 'channel_package_screen.dart';
+import 'tv_ambient_screen.dart';
+import 'voice_feedback_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1771,6 +1777,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Event tuner',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const AutoChannelSwitchScreen()),
+                  ),
+                  // ── batch 42 ──
+                  _ToolCard(
+                    icon: Icons.quiz,
+                    title: 'TV Quiz',
+                    subtitle: 'Trivia game',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvQuizScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.vibration,
+                    title: 'Shake Control',
+                    subtitle: 'Motion trigger',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const RemoteShakeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.inventory_2,
+                    title: 'Packages',
+                    subtitle: 'Channel plans',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ChannelPackageScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.nightlight_round,
+                    title: 'Ambient TV',
+                    subtitle: 'Display mode',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvAmbientScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.record_voice_over,
+                    title: 'Voice Feedback',
+                    subtitle: 'Audio announce',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const VoiceFeedbackScreen()),
                   ),
   ];
 
