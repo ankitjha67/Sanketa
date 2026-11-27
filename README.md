@@ -14,8 +14,8 @@ media to the screen.
 🟢 **Phase 2+3 features complete. Hardware validated on 3 TVs (Haier, Samsung BU8000, Sony BRAVIA 2 II).**
 
 - **411+ tests passing** across 7 packages, all analyzers clean
-- **220 tool cards** in the searchable Tools grid covering remote control, diagnostics, parental, accessibility, gaming, casting, TV management, and 200+ beyond-roadmap features
-- **17 core screens + 200+ feature screens**: Remote, Search, Cast, Tools, Devices, Settings + 41 batches of companion tools
+- **235 tool cards** in the searchable Tools grid covering remote control, diagnostics, parental, accessibility, gaming, casting, TV management, and 200+ beyond-roadmap features
+- **17 core screens + 200+ feature screens**: Remote, Search, Cast, Tools, Devices, Settings + 45 batches of companion tools
 - **15 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge, Panasonic Viera, Philips JointSpace, Hisense VIDAA (MQTT)
 - **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong decrypted database)
 - **5 value-add features (F1–F5)** built, integrated, and UI-verified on device
@@ -48,9 +48,9 @@ media to the screen.
 | **Panasonic Viera** | SOAP control on port 55000, PIN pairing | ✅ Built |
 | **Philips JointSpace** | REST v6 control, Digest auth pairing | ✅ Built |
 
-## Tools grid (220 features)
+## Tools grid (235 features)
 
-The Tools screen exposes a searchable grid of 220 TV companion utilities, all built with the OmniBeam design system and wired to `RemoteScope`. Every screen persists settings locally as JSON, never sends data off-device, and passes analysis clean.
+The Tools screen exposes a searchable grid of 235 TV companion utilities, all built with the OmniBeam design system and wired to `RemoteScope`. Every screen persists settings locally as JSON, never sends data off-device, and passes analysis clean.
 
 | Batch | Features |
 |---|---|
@@ -63,6 +63,7 @@ The Tools screen exposes a searchable grid of 220 TV companion utilities, all bu
 | 26–30 | Voice Macro, Network Block, Cast History, LED Control, Vibrate Profiles, Smart Home Hub, Media Server, Bandwidth Monitor, Sleep Routine, Channel Preview |
 | 31–35 | TV Bingo, Eco Mode, Couch Buzz, Stream Radar, Watch Later, Focus Timer, Noise Gate, Sleep Fade, Parental PIN, TV Karaoke, Remote Compass, App Usage, Quick Translate, TV Health Check, Remote Scheduler, Sound Zones, Screen Split, Content Filter, Macro Pad, TV Weather, Sound EQ Pro, Fav Channels, Screen Record |
 | 36–41 | Sports Score, Room Light, Power Stats, Channel Filter, Macro Runner, Audio Mixer, Cinema Mode, TV Standby, Universal Remote, Notifications, Channel History, Subtitle Style, Sound Mode, TV Info, Gesture Pro, TV Alarm, Audio Viz, Channel Schedule, TV Theme, Network Speed, Input Switch, Voice Assistant, Remote Finder, TV Timer, Ambient Light, Quick Launch, TV Diagnostics, TV Quiz, Remote Shake, Channel Package, TV Ambient, Voice Feedback |
+| 42–45 | Parental Schedule, Touchbar Remote, Multi-Playlist, Power Cycle, Screen Burn Fix, TV Bookmarks, Audio Output, Input Manager, Channel Rating, PiP Control, Subtitle Sync, Macro Recorder, Network Share, PiP Swap, Quick Record |
 | Special | **Auto Channel Switch** — event-based auto-tuner for scheduled broadcasts (sports, news, movies) |
 
 ## Screenshots
