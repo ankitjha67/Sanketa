@@ -185,6 +185,11 @@ import 'remote_scheduler_screen.dart';
 import 'sound_zones_screen.dart';
 import 'screen_split_screen.dart';
 import 'content_filter_screen.dart';
+import 'remote_macro_pad_screen.dart';
+import 'tv_weather_screen.dart';
+import 'sound_eq_pro_screen.dart';
+import 'channel_fav_grid_screen.dart';
+import 'screen_record_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1494,6 +1499,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Rating filter',
                     color: AppColors.error,
                     onTap: () => _push(context, const ContentFilterScreen()),
+                  ),
+                  // ── batch 35 ──
+                  _ToolCard(
+                    icon: Icons.grid_view,
+                    title: 'Macro Pad',
+                    subtitle: 'Key sequences',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const RemoteMacroPadScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.wb_sunny,
+                    title: 'TV Weather',
+                    subtitle: 'Forecast cast',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvWeatherScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.equalizer,
+                    title: 'Sound EQ Pro',
+                    subtitle: '5-band EQ',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SoundEqProScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.star,
+                    title: 'Fav Channels',
+                    subtitle: 'Channel grid',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ChannelFavGridScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.videocam,
+                    title: 'Screen Record',
+                    subtitle: 'TV capture',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ScreenRecordScreen()),
                   ),
   ];
 
