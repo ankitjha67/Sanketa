@@ -190,6 +190,12 @@ import 'tv_weather_screen.dart';
 import 'sound_eq_pro_screen.dart';
 import 'channel_fav_grid_screen.dart';
 import 'screen_record_screen.dart';
+// ── batch 36 imports ──
+import 'sports_score_screen.dart';
+import 'room_light_screen.dart';
+import 'power_stats_screen.dart';
+import 'channel_filter_screen.dart';
+import 'macro_runner_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1535,6 +1541,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'TV capture',
                     color: AppColors.error,
                     onTap: () => _push(context, const ScreenRecordScreen()),
+                  ),
+                  // ── batch 36 ──
+                  _ToolCard(
+                    icon: Icons.sports,
+                    title: 'Sports Score',
+                    subtitle: 'Live scores',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const SportsScoreScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.light_mode,
+                    title: 'Room Light',
+                    subtitle: 'Ambient sync',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const RoomLightScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bolt,
+                    title: 'Power Stats',
+                    subtitle: 'Usage analytics',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const PowerStatsScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.block,
+                    title: 'Channel Filter',
+                    subtitle: 'Block channels',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ChannelFilterScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.play_circle_outline,
+                    title: 'Macro Runner',
+                    subtitle: 'Run macros',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const MacroRunnerScreen()),
                   ),
   ];
 
