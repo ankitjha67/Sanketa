@@ -72,6 +72,7 @@ class _RemoteScreenState extends State<RemoteScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 448),
             child: SingleChildScrollView(
+              physics: _touchpadMode ? const NeverScrollableScrollPhysics() : null,
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
               child: Column(

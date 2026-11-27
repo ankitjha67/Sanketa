@@ -116,7 +116,7 @@ class _TouchpadSurfaceState extends State<TouchpadSurface> {
             onDoubleTap: _onDoubleTap,
             onLongPress: _onLongPress,
             child: Container(
-              height: 220,
+              height: 300,
               decoration: BoxDecoration(
                 color: hex(AppColors.surfaceContainerLowest),
                 borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -155,7 +155,7 @@ class _TouchpadSurfaceState extends State<TouchpadSurface> {
   }
 
   Widget _crosshair() => CustomPaint(
-        size: const Size(220, 220),
+        size: const Size(300, 300),
         painter: _CrosshairPainter(hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
       );
 
