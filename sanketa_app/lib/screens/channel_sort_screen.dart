@@ -1,31 +1,12 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
+import 'dart:io';
 
-import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
-
-class _FavChannel {
-  _FavChannel({required this.number, required this.name, this.category = ''});
-
-  factory _FavChannel.fromJson(Map<String, dynamic> j) => _FavChannel(
-        number: j['number'] as int,
-        name: j['name'] as String,
-        category: j['category'] as String? ?? '',
-      );
-
-  final int number;
-  final String name;
-  final String category;
-
-  Map<String, dynamic> toJson() =>
-      {'number': number, 'name': name, 'category': category};
-}
 
 class ChannelSortScreen extends StatefulWidget {
   const ChannelSortScreen({super.key});
@@ -35,22 +16,22 @@ class ChannelSortScreen extends StatefulWidget {
 }
 
 class _ChannelSortScreenState extends State<ChannelSortScreen> {
-  List<_FavChannel> _channels = [];
-  bool _loading = true;
-  bool _editing = false;
-
-  static const _sampleChannels = [
-    (2, 'CBS', 'News'),
-    (5, 'NBC', 'News'),
-    (7, 'ABC', 'News'),
-    (11, 'FOX', 'Entertainment'),
-    (13, 'PBS', 'Documentary'),
-    (25, 'ESPN', 'Sports'),
-    (30, 'CNN', 'News'),
-    (42, 'Discovery', 'Documentary'),
-    (50, 'HBO', 'Movies'),
-    (75, 'Cartoon Network', 'Kids'),
+  final List<_Channel> _channels = [
+    _Channel('CNN', '203', 'News', true),
+    _Channel('BBC World', '210', 'News', true),
+    _Channel('ESPN', '400', 'Sports', true),
+    _Channel('Fox Sports', '401', 'Sports', true),
+    _Channel('Discovery', '250', 'Documentary', true),
+    _Channel('HBO', '500', 'Movies', true),
+    _Channel('Disney', '302', 'Kids', true),
+    _Channel('Cartoon Network', '301', 'Kids', true),
+    _Channel('MTV', '350', 'Music', false),
+    _Channel('National Geographic', '260', 'Documentary', true),
   ];
+
+  int _sortMode = 0;
+
+  static const _sortModes = ['Custom', 'Name A-Z', 'Number', 'Category'];
 
   @override
   void initState() {
@@ -58,104 +39,89 @@ class _ChannelSortScreenState extends State<ChannelSortScreen> {
     _load();
   }
 
-  Future<File> get _file async {
-    final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/channel_sort.json');
-  }
-
   Future<void> _load() async {
     try {
-      final f = await _file;
+      final dir = await getApplicationSupportDirectory();
+      final f = File('${dir.path}/channel_sort.json');
       if (await f.exists()) {
-        final list = jsonDecode(await f.readAsString()) as List;
-        _channels =
-            list.map((j) => _FavChannel.fromJson(j as Map<String, dynamic>)).toList();
+        final data = jsonDecode(await f.readAsString()) as Map<String, dynamic>;
+        final list = data['channels'] as List<dynamic>? ?? [];
+        setState(() {
+          _sortMode = data['sort'] as int? ?? 0;
+          _channels.clear();
+          for (final c in list) {
+            final m = c as Map<String, dynamic>;
+            _channels.add(_Channel(
+              m['name'] as String? ?? '',
+              m['num'] as String? ?? '',
+              m['cat'] as String? ?? '',
+              m['vis'] as bool? ?? true,
+            ));
+          }
+        });
       }
-    } on Object { /* defaults */ }
-    if (_channels.isEmpty) _loadSamples();
-    if (mounted) setState(() => _loading = false);
-  }
-
-  void _loadSamples() {
-    _channels = _sampleChannels
-        .map((s) => _FavChannel(number: s.$1, name: s.$2, category: s.$3))
-        .toList();
-    _save();
+    } catch (_) {}
   }
 
   Future<void> _save() async {
-    final f = await _file;
-    await f.writeAsString(jsonEncode(_channels.map((c) => c.toJson()).toList()));
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final f = File('${dir.path}/channel_sort.json');
+      await f.writeAsString(jsonEncode({
+        'sort': _sortMode,
+        'channels': _channels
+            .map((c) => {
+                  'name': c.name,
+                  'num': c.number,
+                  'cat': c.category,
+                  'vis': c.visible,
+                })
+            .toList(),
+      }));
+    } catch (_) {}
   }
 
-  void _moveUp(int idx) {
-    if (idx <= 0) return;
+  void _reorder(int old, int next) {
+    if (next > old) next -= 1;
     setState(() {
-      final item = _channels.removeAt(idx);
-      _channels.insert(idx - 1, item);
+      final item = _channels.removeAt(old);
+      _channels.insert(next, item);
     });
-    HapticFeedback.selectionClick();
     _save();
+    HapticFeedback.selectionClick();
   }
 
-  void _moveDown(int idx) {
-    if (idx >= _channels.length - 1) return;
+  void _toggleVisible(int idx) {
+    setState(() => _channels[idx].visible = !_channels[idx].visible);
+    _save();
+    HapticFeedback.selectionClick();
+  }
+
+  void _applySortMode(int mode) {
     setState(() {
-      final item = _channels.removeAt(idx);
-      _channels.insert(idx + 1, item);
+      _sortMode = mode;
+      switch (mode) {
+        case 1:
+          _channels.sort((a, b) => a.name.compareTo(b.name));
+        case 2:
+          _channels.sort((a, b) {
+            final an = int.tryParse(a.number) ?? 0;
+            final bn = int.tryParse(b.number) ?? 0;
+            return an.compareTo(bn);
+          });
+        case 3:
+          _channels.sort((a, b) => a.category.compareTo(b.category));
+        default:
+          break;
+      }
     });
-    HapticFeedback.selectionClick();
     _save();
-  }
-
-  void _deleteChannel(int idx) {
-    setState(() => _channels.removeAt(idx));
-    _save();
-  }
-
-  void _tuneChannel(int number) {
-    final rc = RemoteScope.of(context);
-    final digits = number.toString();
-    for (final d in digits.split('')) {
-      rc.type(d);
-    }
-    rc.key(core.Key.ok);
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(
-        content: Text('Tuning to Ch $number'),
-        duration: const Duration(seconds: 1),
-      ));
-  }
-
-  int _categoryColor(String cat) {
-    switch (cat) {
-      case 'News':
-        return AppColors.primary;
-      case 'Sports':
-        return AppColors.signalEmerald;
-      case 'Movies':
-        return AppColors.secondary;
-      case 'Entertainment':
-        return AppColors.alertAmber;
-      case 'Documentary':
-        return AppColors.tertiary;
-      case 'Kids':
-        return AppColors.error;
-      default:
-        return AppColors.outline;
-    }
+    HapticFeedback.mediumImpact();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return Scaffold(
-        backgroundColor: hex(AppColors.surface),
-        body: Center(child: CircularProgressIndicator(color: hex(AppColors.primary))),
-      );
-    }
-
+    final visCount = _channels.where((c) => c.visible).length;
     return Scaffold(
       backgroundColor: hex(AppColors.surface),
       appBar: AppBar(
@@ -167,182 +133,203 @@ class _ChannelSortScreenState extends State<ChannelSortScreen> {
                 color: hex(AppColors.onSurface),
                 size: 18,
                 weight: FontWeight.w600)),
-        actions: [
-          GestureDetector(
-            onTap: () => setState(() => _editing = !_editing),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(
-                _editing ? Icons.check : Icons.edit,
-                size: 20,
-                color: hex(_editing ? AppColors.signalEmerald : AppColors.outline),
-              ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+            child: _heroCard(),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+            child: _sortModeRow(),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: _statRow(visCount),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: ReorderableListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: _channels.length,
+              onReorderItem: (old, next) => _reorder(old, next),
+              itemBuilder: (ctx, idx) => _channelTile(idx, _channels[idx]),
             ),
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          _heroCard(),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Favorites (${_channels.length})',
-                  style: gfont(AppType.bodyMd,
-                      color: hex(AppColors.onSurface),
-                      weight: FontWeight.w600)),
-              if (_editing)
-                Text('Drag to reorder',
-                    style: gfont(AppType.bodySm,
-                        color: hex(AppColors.outline), size: 10)),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: _infoCard(),
           ),
-          const SizedBox(height: 8),
-          if (_channels.isEmpty)
-            _emptyState()
-          else
-            ..._channels.asMap().entries.map((e) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: _channelRow(e.value, e.key),
-                )),
-          const SizedBox(height: AppSpacing.lg),
-          _infoCard(),
         ],
       ),
     );
   }
 
   Widget _heroCard() => Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: AppSpacing.lg),
+        padding: const EdgeInsets.symmetric(
+            vertical: 20, horizontal: AppSpacing.lg),
         decoration: BoxDecoration(
           color: hex(AppColors.secondary).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
               color: hex(AppColors.secondary).withValues(alpha: 0.2)),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(Icons.sort, size: 48, color: hex(AppColors.secondary)),
-            const SizedBox(height: 8),
-            Text('Organize Your Channels',
-                style: gfont(AppType.bodyMd,
-                    color: hex(AppColors.secondary),
-                    weight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(
-              'Reorder your favorite channels so the most-watched are at the top',
-              textAlign: TextAlign.center,
-              style: gfont(AppType.bodySm,
-                  color: hex(AppColors.outline), size: 11),
+            Icon(Icons.sort, size: 36, color: hex(AppColors.secondary)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Sort & Organize',
+                      style: gfont(AppType.bodyMd,
+                          color: hex(AppColors.secondary),
+                          weight: FontWeight.w600)),
+                  Text(
+                    'Reorder channels, hide unwanted, sort by name/number/category',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.outline), size: 11),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       );
 
-  Widget _channelRow(_FavChannel ch, int idx) {
-    final catColor = _categoryColor(ch.category);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: hex(AppColors.surfaceContainerLow),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-            color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: hex(catColor).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadii.sm),
-            ),
-            child: Center(
-              child: Text('${idx + 1}',
-                  style: gfont(AppType.bodySm,
-                      color: hex(catColor),
-                      weight: FontWeight.w700,
-                      size: 11)),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Ch ${ch.number} — ${ch.name}',
-                    style: gfont(AppType.bodyMd,
-                        color: hex(AppColors.onSurface),
-                        weight: FontWeight.w600,
-                        size: 12)),
-                if (ch.category.isNotEmpty)
-                  Text(ch.category,
-                      style: gfont(AppType.bodySm,
-                          color: hex(catColor), size: 9)),
-              ],
-            ),
-          ),
-          if (_editing) ...[
-            GestureDetector(
-              onTap: () => _moveUp(idx),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Icon(Icons.arrow_upward,
-                    size: 16, color: hex(AppColors.primary)),
-              ),
-            ),
-            GestureDetector(
-              onTap: () => _moveDown(idx),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Icon(Icons.arrow_downward,
-                    size: 16, color: hex(AppColors.primary)),
-              ),
-            ),
-            GestureDetector(
-              onTap: () => _deleteChannel(idx),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Icon(Icons.close, size: 16, color: hex(AppColors.error)),
-              ),
-            ),
-          ] else
-            GestureDetector(
-              onTap: () => _tuneChannel(ch.number),
+  Widget _sortModeRow() => Row(
+        children: _sortModes.asMap().entries.map((e) {
+          final active = e.key == _sortMode;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => _applySortMode(e.key),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: hex(AppColors.primary).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  color: hex(active
+                          ? AppColors.primary
+                          : AppColors.surfaceContainerLow)
+                      .withValues(alpha: active ? 0.15 : 1),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  border: Border.all(
+                      color: hex(active
+                              ? AppColors.primary
+                              : AppColors.outlineVariant)
+                          .withValues(alpha: active ? 0.4 : 0.2)),
                 ),
-                child: Text('Tune',
+                child: Center(
+                  child: Text(e.value,
+                      style: gfont(AppType.bodySm,
+                          color: hex(
+                              active ? AppColors.primary : AppColors.onSurface),
+                          weight:
+                              active ? FontWeight.w600 : FontWeight.w400,
+                          size: 10)),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+
+  Widget _statRow(int vis) => Row(
+        children: [
+          _stat('Total', '${_channels.length}', AppColors.primary),
+          const SizedBox(width: AppSpacing.sm),
+          _stat('Visible', '$vis', AppColors.signalEmerald),
+          const SizedBox(width: AppSpacing.sm),
+          _stat('Hidden', '${_channels.length - vis}', AppColors.outlineVariant),
+        ],
+      );
+
+  Widget _stat(String label, String val, int c) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: hex(c).withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppRadii.md),
+          ),
+          child: Column(
+            children: [
+              Text(val,
+                  style: gfont(AppType.bodyMd,
+                      color: hex(c), weight: FontWeight.w700)),
+              Text(label,
+                  style: gfont(AppType.bodySm,
+                      color: hex(AppColors.outline), size: 9)),
+            ],
+          ),
+        ),
+      );
+
+  Widget _channelTile(int idx, _Channel ch) => Container(
+        key: ValueKey('ch_${idx}_${ch.number}'),
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: hex(ch.visible
+                  ? AppColors.surfaceContainerLow
+                  : AppColors.outlineVariant)
+              .withValues(alpha: ch.visible ? 1 : 0.06),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(
+              color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.drag_handle,
+                size: 18, color: hex(AppColors.outline)),
+            const SizedBox(width: 8),
+            Container(
+              width: 36,
+              height: 24,
+              decoration: BoxDecoration(
+                color: hex(AppColors.primary).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+              child: Center(
+                child: Text(ch.number,
                     style: gfont(AppType.bodySm,
                         color: hex(AppColors.primary),
                         weight: FontWeight.w600,
                         size: 10)),
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _emptyState() => Column(
-        children: [
-          const SizedBox(height: 16),
-          Icon(Icons.playlist_add, size: 40, color: hex(AppColors.outline)),
-          const SizedBox(height: 8),
-          Text('No favorite channels',
-              style: gfont(AppType.bodyMd,
-                  color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text('Add channels from the Channel Guide',
-              style: gfont(AppType.bodySm,
-                  color: hex(AppColors.outline), size: 11)),
-        ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ch.name,
+                      style: gfont(AppType.bodySm,
+                          color: hex(ch.visible
+                              ? AppColors.onSurface
+                              : AppColors.outline),
+                          weight: FontWeight.w600,
+                          size: 12)),
+                  Text(ch.category,
+                      style: gfont(AppType.bodySm,
+                          color: hex(AppColors.outline), size: 9)),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _toggleVisible(idx),
+              child: Icon(
+                ch.visible ? Icons.visibility : Icons.visibility_off,
+                size: 20,
+                color: hex(ch.visible
+                    ? AppColors.signalEmerald
+                    : AppColors.outlineVariant),
+              ),
+            ),
+          ],
+        ),
       );
 
   Widget _infoCard() => Container(
@@ -360,7 +347,8 @@ class _ChannelSortScreenState extends State<ChannelSortScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Reorder your favorite channels by priority. Tap Edit to move channels up or down, or remove them. Tap Tune to switch to any channel instantly.',
+                'Sort and organize your channel lineup. Drag to reorder, '
+                'toggle visibility, sort by name/number/category. All data local.',
                 style: gfont(AppType.bodySm,
                     color: hex(AppColors.onSurface), size: 11),
               ),
@@ -368,4 +356,12 @@ class _ChannelSortScreenState extends State<ChannelSortScreen> {
           ],
         ),
       );
+}
+
+class _Channel {
+  String name;
+  String number;
+  String category;
+  bool visible;
+  _Channel(this.name, this.number, this.category, this.visible);
 }

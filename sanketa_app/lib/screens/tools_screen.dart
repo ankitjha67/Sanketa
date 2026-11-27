@@ -236,6 +236,12 @@ import 'remote_touchbar_screen.dart';
 import 'tv_playlist_screen.dart';
 import 'power_cycle_screen.dart';
 import 'screen_burn_fix_screen.dart';
+// ── batch 44 imports ──
+import 'tv_bookmark_screen.dart';
+import 'tv_audio_output_screen.dart';
+import 'tv_input_manager_screen.dart';
+import 'channel_rating_screen.dart';
+import 'screen_pip_control_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1855,6 +1861,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Pixel refresh',
                     color: AppColors.tertiary,
                     onTap: () => _push(context, const ScreenBurnFixScreen()),
+                  ),
+                  // ── batch 44 ──
+                  _ToolCard(
+                    icon: Icons.bookmark,
+                    title: 'TV Bookmarks',
+                    subtitle: 'Save channels',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvBookmarkScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.speaker_group,
+                    title: 'Audio Output',
+                    subtitle: 'Switch output',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvAudioOutputScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.input,
+                    title: 'Input Manager',
+                    subtitle: 'HDMI & ports',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const TvInputManagerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.star,
+                    title: 'Channel Rating',
+                    subtitle: 'Rate channels',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ChannelRatingScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.picture_in_picture,
+                    title: 'PiP Control',
+                    subtitle: 'Multi-view',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const ScreenPipControlScreen()),
                   ),
   ];
 
