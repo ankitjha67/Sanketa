@@ -152,26 +152,35 @@ import 'screen_cast_screen.dart';
 import 'button_remap_screen.dart';
 import 'tv_color_screen.dart';
 import 'app_timer_screen.dart';
+import 'voice_dictation_screen.dart';
+import 'tv_resolution_screen.dart';
+import 'scene_mode_screen.dart';
+import 'auto_volume_screen.dart';
+import 'remote_gesture_pad_screen.dart';
+import 'voice_macro_screen.dart';
+import 'network_block_screen.dart';
+import 'cast_history_screen.dart';
+import 'led_control_screen.dart';
+import 'vibrate_profile_screen.dart';
 
-class ToolsScreen extends StatelessWidget {
+class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _header(),
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 448),
-              child: GridView.count(
-                crossAxisCount: 2,
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                mainAxisSpacing: AppSpacing.md,
-                crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 1.1,
-                children: [
+  State<ToolsScreen> createState() => _ToolsScreenState();
+}
+
+class _ToolsScreenState extends State<ToolsScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<_ToolCard> _allCards(BuildContext context) => [
                   _ToolCard(
                     icon: Icons.cleaning_services_rounded,
                     title: 'TV Debloat',
@@ -1225,14 +1234,131 @@ class ToolsScreen extends StatelessWidget {
                     color: AppColors.alertAmber,
                     onTap: () => _push(context, const AppTimerScreen()),
                   ),
-                ],
-              ),
+                  // ── batch 28 ──
+                  _ToolCard(
+                    icon: Icons.record_voice_over,
+                    title: 'Voice Dictation',
+                    subtitle: 'Speak to TV',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const VoiceDictationScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.tv,
+                    title: 'TV Resolution',
+                    subtitle: 'Display settings',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvResolutionScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.movie,
+                    title: 'Scene Mode',
+                    subtitle: 'Picture presets',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const SceneModeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.graphic_eq,
+                    title: 'Auto Volume',
+                    subtitle: 'Level audio',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const AutoVolumeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.swipe,
+                    title: 'Gesture Pad',
+                    subtitle: 'Swipe control',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const RemoteGesturePadScreen()),
+                  ),
+                  // ── batch 29 ──
+                  _ToolCard(
+                    icon: Icons.mic,
+                    title: 'Voice Macro',
+                    subtitle: 'Speak to trigger',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const VoiceMacroScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.shield,
+                    title: 'Network Block',
+                    subtitle: 'App firewall',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const NetworkBlockScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.cast_connected,
+                    title: 'Cast History',
+                    subtitle: 'Session log',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const CastHistoryScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.light_mode,
+                    title: 'LED Control',
+                    subtitle: 'Ambient lighting',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const LedControlScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.vibration,
+                    title: 'Vibrate Profiles',
+                    subtitle: 'Haptic events',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const VibrateProfileScreen()),
+                  ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = _allCards(context);
+    final filtered = _query.isEmpty
+        ? cards
+        : cards
+            .where((c) =>
+                c.title.toLowerCase().contains(_query) ||
+                c.subtitle.toLowerCase().contains(_query))
+            .toList();
+
+    return Column(
+      children: [
+        _header(),
+        Expanded(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 448),
+              child: filtered.isEmpty
+                  ? _emptySearch()
+                  : GridView.count(
+                      crossAxisCount: 2,
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      mainAxisSpacing: AppSpacing.md,
+                      crossAxisSpacing: AppSpacing.md,
+                      childAspectRatio: 1.1,
+                      children: filtered,
+                    ),
             ),
           ),
         ),
       ],
     );
   }
+
+  Widget _emptySearch() => Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 48,
+              color: hex(AppColors.outline).withValues(alpha: 0.3)),
+          const SizedBox(height: 8),
+          Text('No tools found',
+              style: gfont(AppType.bodyMd,
+                  color: hex(AppColors.onSurface),
+                  weight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text('Try a different search term',
+              style: gfont(AppType.bodySm,
+                  color: hex(AppColors.outline), size: 11)),
+        ],
+      );
 
   Widget _header() => Container(
         padding: const EdgeInsets.symmetric(
@@ -1246,16 +1372,79 @@ class ToolsScreen extends StatelessWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 448),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.build_rounded,
-                    size: 20, color: hex(AppColors.primaryContainer)),
-                const SizedBox(width: AppSpacing.sm),
-                Text('Tools',
-                    style: gfont(AppType.headlineMd,
-                        color: hex(AppColors.onSurface),
-                        size: 16,
-                        weight: FontWeight.w600)),
+                Row(
+                  children: [
+                    Icon(Icons.build_rounded,
+                        size: 20, color: hex(AppColors.primaryContainer)),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text('Tools',
+                        style: gfont(AppType.headlineMd,
+                            color: hex(AppColors.onSurface),
+                            size: 16,
+                            weight: FontWeight.w600)),
+                    const Spacer(),
+                    Text(
+                      '${_allCards(context).length}',
+                      style: gfont(AppType.bodySm,
+                          color: hex(AppColors.outline), size: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) =>
+                        setState(() => _query = v.trim().toLowerCase()),
+                    style: gfont(AppType.bodyMd,
+                        color: hex(AppColors.onSurface), size: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Search tools...',
+                      hintStyle: gfont(AppType.bodySm,
+                          color: hex(AppColors.outline).withValues(alpha: 0.5),
+                          size: 12),
+                      prefixIcon: Icon(Icons.search,
+                          size: 18,
+                          color: hex(AppColors.outline).withValues(alpha: 0.5)),
+                      suffixIcon: _query.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                _searchCtrl.clear();
+                                setState(() => _query = '');
+                              },
+                              child: Icon(Icons.close,
+                                  size: 16, color: hex(AppColors.outline)),
+                            )
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 0),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        borderSide: BorderSide(
+                            color: hex(AppColors.outlineVariant)
+                                .withValues(alpha: 0.3)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        borderSide: BorderSide(
+                            color: hex(AppColors.outlineVariant)
+                                .withValues(alpha: 0.3)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        borderSide: BorderSide(
+                            color: hex(AppColors.primary).withValues(alpha: 0.5)),
+                      ),
+                      filled: true,
+                      fillColor: hex(AppColors.surfaceContainerLow),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
