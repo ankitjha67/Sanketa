@@ -203,7 +203,9 @@ class _VoiceMacroScreenState extends State<VoiceMacroScreen> {
               GestureDetector(
                 onTap: () {
                   if (phraseCtrl.text.trim().isEmpty ||
-                      selectedKeys.isEmpty) return;
+                      selectedKeys.isEmpty) {
+                    return;
+                  }
                   setState(() {
                     _macros.add(_VoiceMacro(
                       phrase: phraseCtrl.text.trim(),
