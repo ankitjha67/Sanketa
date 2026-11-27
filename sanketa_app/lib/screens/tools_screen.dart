@@ -202,6 +202,23 @@ import 'cinema_mode_screen.dart';
 import 'tv_standby_screen.dart';
 import 'universal_remote_screen.dart';
 import 'notification_center_screen.dart';
+// ── batch 38 imports ──
+import 'channel_history_screen.dart';
+import 'subtitle_style_screen.dart';
+import 'sound_mode_screen.dart';
+import 'tv_info_screen.dart';
+// ── batch 39 imports ──
+import 'remote_gesture_pro_screen.dart';
+import 'tv_alarm_clock_screen.dart';
+import 'audio_visualizer_screen.dart';
+import 'channel_scheduler_screen.dart';
+import 'tv_theme_screen.dart';
+// ── batch 40 imports ──
+import 'network_speed_screen.dart';
+import 'input_switch_screen.dart';
+import 'voice_assistant_screen.dart';
+import 'remote_finder_screen.dart';
+import 'tv_timer_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1619,6 +1636,107 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'TV alerts',
                     color: AppColors.alertAmber,
                     onTap: () => _push(context, const NotificationCenterScreen()),
+                  ),
+                  // ── batch 38 ──
+                  _ToolCard(
+                    icon: Icons.history,
+                    title: 'Channel History',
+                    subtitle: 'Recent channels',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ChannelHistoryScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.subtitles,
+                    title: 'Subtitle Style',
+                    subtitle: 'Caption look',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const SubtitleStyleScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.surround_sound,
+                    title: 'Sound Mode',
+                    subtitle: 'Audio profiles',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const SoundModeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.info_outline,
+                    title: 'TV Info',
+                    subtitle: 'System details',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvInfoScreen()),
+                  ),
+                  // ── batch 39 ──
+                  _ToolCard(
+                    icon: Icons.swipe,
+                    title: 'Gesture Pro',
+                    subtitle: 'Touch control',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const RemoteGestureProScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.alarm,
+                    title: 'TV Alarm',
+                    subtitle: 'Wake timer',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvAlarmClockScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.graphic_eq,
+                    title: 'Audio Viz',
+                    subtitle: 'Music visuals',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const AudioVisualizerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.schedule,
+                    title: 'Channel Schedule',
+                    subtitle: 'Auto-tune',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const ChannelSchedulerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.palette,
+                    title: 'TV Theme',
+                    subtitle: 'UI customize',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const TvThemeScreen()),
+                  ),
+                  // ── batch 40 ──
+                  _ToolCard(
+                    icon: Icons.speed,
+                    title: 'Network Speed',
+                    subtitle: 'Test bandwidth',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const NetworkSpeedScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.settings_input_hdmi,
+                    title: 'Input Switch',
+                    subtitle: 'Change source',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const InputSwitchScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.mic,
+                    title: 'Voice Assistant',
+                    subtitle: 'Voice control',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const VoiceAssistantScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.find_in_page,
+                    title: 'Remote Finder',
+                    subtitle: 'Find remote',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const RemoteFinderScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.timer,
+                    title: 'TV Timer',
+                    subtitle: 'Countdown off',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const TvTimerScreen()),
                   ),
   ];
 

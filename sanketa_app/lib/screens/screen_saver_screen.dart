@@ -1,10 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:sanketa_core/sanketa_core.dart' as core;
 import 'package:sanketa_design/sanketa_design.dart';
 
+import '../control/remote_controller.dart';
 import '../theme/tokens_x.dart';
 
 class ScreenSaverScreen extends StatefulWidget {
@@ -15,55 +14,47 @@ class ScreenSaverScreen extends StatefulWidget {
 }
 
 class _ScreenSaverScreenState extends State<ScreenSaverScreen> {
-  int _selectedType = 0;
-  int _timeoutIndex = 2;
-  double _brightness = 0.5;
-  bool _showClock = true;
+  int _selectedStyle = 0;
+  double _timeoutMin = 5;
+  bool _previewing = false;
 
-  static const _types = [
-    ('Ambient Art', Icons.palette, 'Slowly shifting colour gradients'),
-    ('Photo Frame', Icons.photo_library, 'Slideshow from your photos'),
-    ('Clock', Icons.access_time, 'Large digital/analogue clock'),
-    ('Blank Screen', Icons.brightness_1, 'Screen goes dark to save energy'),
-    ('Fireplace', Icons.local_fire_department, 'Cozy animated fireplace'),
-    ('Aquarium', Icons.water, 'Tropical fish aquarium loop'),
+  static const _styles = [
+    ('Clock', Icons.access_time, 'Large analog clock with date overlay'),
+    ('Photos', Icons.photo_library, 'Slideshow of saved photos'),
+    ('Bubbles', Icons.bubble_chart, 'Floating color bubbles animation'),
+    ('Starfield', Icons.star, 'Drifting stars in deep space'),
+    ('Blank', Icons.tv_off, 'Screen goes dark to save energy'),
   ];
 
-  static const _timeouts = ['1 min', '2 min', '5 min', '10 min', '30 min', 'Never'];
+  static const _styleColors = [
+    AppColors.primary,
+    AppColors.secondary,
+    AppColors.tertiary,
+    AppColors.signalEmerald,
+    AppColors.outline,
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
+  void _applySettings() {
+    final rc = RemoteScope.of(context);
+    rc.key(core.Key.menu);
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(
+            '${_styles[_selectedStyle].$1} screensaver set (${_timeoutMin.round()} min)'),
+        duration: const Duration(seconds: 2),
+      ));
   }
 
-  Future<File> get _file async {
-    final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/screensaver_settings.json');
-  }
-
-  Future<void> _load() async {
-    try {
-      final f = await _file;
-      if (await f.exists()) {
-        final j = jsonDecode(await f.readAsString()) as Map<String, dynamic>;
-        _selectedType = j['type'] as int? ?? 0;
-        _timeoutIndex = j['timeout'] as int? ?? 2;
-        _brightness = (j['brightness'] as num?)?.toDouble() ?? 0.5;
-        _showClock = j['showClock'] as bool? ?? true;
-      }
-    } on Object { /* defaults */ }
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _save() async {
-    final f = await _file;
-    await f.writeAsString(jsonEncode({
-      'type': _selectedType,
-      'timeout': _timeoutIndex,
-      'brightness': _brightness,
-      'showClock': _showClock,
-    }));
+  void _preview() {
+    setState(() => _previewing = true);
+    HapticFeedback.selectionClick();
+    final rc = RemoteScope.of(context);
+    rc.key(core.Key.ok);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _previewing = false);
+    });
   }
 
   @override
@@ -75,251 +66,289 @@ class _ScreenSaverScreenState extends State<ScreenSaverScreen> {
         foregroundColor: hex(AppColors.onSurface),
         elevation: 0,
         title: Text('Screen Saver',
-            style: gfont(AppType.headlineMd, color: hex(AppColors.onSurface), size: 18, weight: FontWeight.w600)),
+            style: gfont(AppType.headlineMd,
+                color: hex(AppColors.onSurface),
+                size: 18,
+                weight: FontWeight.w600)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          _previewCard(),
+          _heroCard(),
+          const SizedBox(height: AppSpacing.lg),
+          _styleSelector(),
+          const SizedBox(height: AppSpacing.lg),
+          _timeoutSlider(),
+          const SizedBox(height: AppSpacing.lg),
+          _previewButton(),
           const SizedBox(height: AppSpacing.md),
-          Text('Style',
-              style: gfont(AppType.bodyMd, color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          ...List.generate(_types.length, (i) => Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: _typeCard(i),
-          )),
-          const SizedBox(height: AppSpacing.md),
-          _timeoutSelector(),
-          const SizedBox(height: AppSpacing.md),
-          _brightnessControl(),
-          const SizedBox(height: AppSpacing.md),
-          _clockToggle(),
-          const SizedBox(height: AppSpacing.md),
-          _infoCard(),
+          _applyButton(),
+          const SizedBox(height: AppSpacing.lg),
+          _tipsCard(),
         ],
       ),
     );
   }
 
-  Widget _previewCard() => Container(
-    height: 160,
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          hex(AppColors.primary).withValues(alpha: 0.15),
-          hex(AppColors.tertiary).withValues(alpha: 0.1),
-          hex(AppColors.secondary).withValues(alpha: 0.08),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      border: Border.all(color: hex(AppColors.outlineVariant).withValues(alpha: 0.2)),
-    ),
-    child: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_types[_selectedType].$2, size: 40, color: hex(AppColors.primary)),
-          const SizedBox(height: 8),
-          Text(_types[_selectedType].$1,
-              style: gfont(AppType.bodyMd, color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-          Text('Preview',
-              style: gfont(AppType.bodySm, color: hex(AppColors.outline), size: 10)),
-        ],
-      ),
-    ),
-  );
-
-  Widget _typeCard(int index) {
-    final t = _types[index];
-    final active = index == _selectedType;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedType = index);
-        _save();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+  Widget _heroCard() => Container(
+        padding:
+            const EdgeInsets.symmetric(vertical: 24, horizontal: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: hex(active ? AppColors.primaryContainer : AppColors.surfaceContainerLow)
-              .withValues(alpha: active ? 0.1 : 1),
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          color: hex(AppColors.tertiary).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
-            color: hex(active ? AppColors.primary : AppColors.outlineVariant)
-                .withValues(alpha: active ? 0.4 : 0.15),
-          ),
+              color: hex(AppColors.tertiary).withValues(alpha: 0.2)),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: hex(active ? AppColors.primary : AppColors.outline).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadii.sm),
-              ),
-              child: Icon(t.$2, size: 18, color: hex(active ? AppColors.primary : AppColors.outline)),
+            Icon(Icons.wallpaper, size: 48, color: hex(AppColors.tertiary)),
+            const SizedBox(height: 8),
+            Text('Screen Saver',
+                style: gfont(AppType.bodyMd,
+                    color: hex(AppColors.tertiary),
+                    weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(
+              'Choose a screensaver style and set when it activates after idle',
+              textAlign: TextAlign.center,
+              style:
+                  gfont(AppType.bodySm, color: hex(AppColors.outline), size: 11),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(t.$1,
-                      style: gfont(AppType.bodyMd,
-                          color: hex(active ? AppColors.primary : AppColors.onSurface),
-                          weight: active ? FontWeight.w600 : FontWeight.w400, size: 12)),
-                  Text(t.$3,
-                      style: gfont(AppType.bodySm, color: hex(AppColors.outline), size: 10)),
-                ],
-              ),
-            ),
-            if (active) Icon(Icons.check_circle, size: 18, color: hex(AppColors.primary)),
           ],
         ),
-      ),
-    );
-  }
+      );
 
-  Widget _timeoutSelector() => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
-    decoration: BoxDecoration(
-      color: hex(AppColors.surfaceContainerLow),
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      border: Border.all(color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Start After', style: gfont(AppType.bodyMd, color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: List.generate(_timeouts.length, (i) {
-            final active = i == _timeoutIndex;
-            return GestureDetector(
-              onTap: () {
-                setState(() => _timeoutIndex = i);
-                _save();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: hex(active ? AppColors.primary : AppColors.surfaceContainerHigh)
-                      .withValues(alpha: active ? 0.15 : 1),
-                  borderRadius: BorderRadius.circular(AppRadii.full),
-                  border: Border.all(
-                    color: hex(active ? AppColors.primary : AppColors.outlineVariant)
-                        .withValues(alpha: active ? 0.5 : 0.2),
+  Widget _styleSelector() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Style',
+              style: gfont(AppType.bodyMd,
+                  color: hex(AppColors.onSurface),
+                  weight: FontWeight.w600)),
+          const SizedBox(height: AppSpacing.sm),
+          ...List.generate(_styles.length, (i) {
+            final s = _styles[i];
+            final selected = _selectedStyle == i;
+            final c = _styleColors[i];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() => _selectedStyle = i);
+                  HapticFeedback.selectionClick();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? hex(c).withValues(alpha: 0.1)
+                        : hex(AppColors.surfaceContainerLow),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    border: Border.all(
+                      color: selected
+                          ? hex(c).withValues(alpha: 0.5)
+                          : hex(AppColors.outlineVariant).withValues(alpha: 0.15),
+                      width: selected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(s.$2,
+                          size: 28,
+                          color: selected
+                              ? hex(c)
+                              : hex(AppColors.outline)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(s.$1,
+                                style: gfont(AppType.bodyMd,
+                                    color: hex(AppColors.onSurface),
+                                    weight: FontWeight.w600,
+                                    size: 13)),
+                            const SizedBox(height: 2),
+                            Text(s.$3,
+                                style: gfont(AppType.bodySm,
+                                    color: hex(AppColors.outline),
+                                    size: 11)),
+                          ],
+                        ),
+                      ),
+                      if (selected)
+                        Icon(Icons.check_circle,
+                            size: 20, color: hex(c)),
+                    ],
                   ),
                 ),
-                child: Text(_timeouts[i],
-                    style: gfont(AppType.bodySm,
-                        color: hex(active ? AppColors.primary : AppColors.onSurface),
-                        weight: active ? FontWeight.w600 : FontWeight.w400, size: 11)),
               ),
             );
           }),
-        ),
-      ],
-    ),
-  );
+        ],
+      );
 
-  Widget _brightnessControl() => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
-    decoration: BoxDecoration(
-      color: hex(AppColors.surfaceContainerLow),
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      border: Border.all(color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+  Widget _timeoutSlider() => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: hex(AppColors.surfaceContainerLow),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(
+              color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.brightness_6, size: 16, color: hex(AppColors.alertAmber)),
-            const SizedBox(width: 8),
-            Text('Screen Brightness',
-                style: gfont(AppType.bodyMd, color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-            const Spacer(),
-            Text('${(_brightness * 100).round()}%',
-                style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline))),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Activation Timeout',
+                    style: gfont(AppType.bodyMd,
+                        color: hex(AppColors.onSurface),
+                        weight: FontWeight.w600,
+                        size: 12)),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: hex(AppColors.tertiary).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                  ),
+                  child: Text('${_timeoutMin.round()} min',
+                      style: gfont(AppType.bodySm,
+                          color: hex(AppColors.tertiary),
+                          weight: FontWeight.w600,
+                          size: 11)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: hex(AppColors.tertiary),
+                inactiveTrackColor:
+                    hex(AppColors.tertiary).withValues(alpha: 0.15),
+                thumbColor: hex(AppColors.tertiary),
+                trackHeight: 4,
+              ),
+              child: Slider(
+                value: _timeoutMin,
+                min: 1,
+                max: 30,
+                divisions: 29,
+                onChanged: (v) {
+                  setState(() => _timeoutMin = v);
+                  HapticFeedback.selectionClick();
+                },
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('1 min',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.outline), size: 10)),
+                Text('30 min',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.outline), size: 10)),
+              ],
+            ),
           ],
         ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: hex(AppColors.alertAmber),
-            inactiveTrackColor: hex(AppColors.outlineVariant).withValues(alpha: 0.2),
-            thumbColor: hex(AppColors.alertAmber),
-            trackHeight: 4,
-          ),
-          child: Slider(
-            value: _brightness,
-            min: 0.0,
-            max: 1.0,
-            onChanged: (v) => setState(() => _brightness = v),
-            onChangeEnd: (_) => _save(),
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 
-  Widget _clockToggle() => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
-    decoration: BoxDecoration(
-      color: hex(AppColors.surfaceContainerLow),
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      border: Border.all(color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
-    ),
-    child: Row(
-      children: [
-        Icon(Icons.access_time, size: 20, color: hex(AppColors.primary)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Show Clock Overlay',
-                  style: gfont(AppType.bodyMd, color: hex(AppColors.onSurface), weight: FontWeight.w600)),
-              Text('Display time over the screen saver',
-                  style: gfont(AppType.bodySm, color: hex(AppColors.outline), size: 11)),
-            ],
+  Widget _previewButton() => SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: _previewing ? null : _preview,
+          icon: _previewing
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: hex(AppColors.tertiary),
+                  ),
+                )
+              : Icon(Icons.play_arrow, color: hex(AppColors.tertiary)),
+          label: Text(
+            _previewing ? 'Previewing...' : 'Preview',
+            style: gfont(AppType.bodyMd,
+                color: hex(AppColors.tertiary), weight: FontWeight.w600),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: hex(AppColors.tertiary)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.md)),
           ),
         ),
-        Switch(
-          value: _showClock,
-          activeTrackColor: hex(AppColors.primary),
-          onChanged: (v) {
-            setState(() => _showClock = v);
-            _save();
-          },
-        ),
-      ],
-    ),
-  );
+      );
 
-  Widget _infoCard() => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
-    decoration: BoxDecoration(
-      color: hex(AppColors.tertiary).withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      border: Border.all(color: hex(AppColors.tertiary).withValues(alpha: 0.2)),
-    ),
-    child: Row(
-      children: [
-        Icon(Icons.info_outline, size: 16, color: hex(AppColors.tertiary)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            'Configure your TV screen saver style and timing. Settings are sent directly to your TV over the local network. Protects OLED panels from burn-in.',
-            style: gfont(AppType.bodySm, color: hex(AppColors.onSurface), size: 11),
+  Widget _applyButton() => SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _applySettings,
+          icon: const Icon(Icons.check, size: 18),
+          label: Text('Apply Settings',
+              style: gfont(AppType.bodyMd,
+                  color: Colors.white, weight: FontWeight.w600)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: hex(AppColors.tertiary),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.md)),
           ),
         ),
-      ],
-    ),
-  );
+      );
+
+  Widget _tipsCard() => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: hex(AppColors.surfaceContainerLow),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(
+              color: hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.lightbulb_outline,
+                    size: 16, color: hex(AppColors.alertAmber)),
+                const SizedBox(width: 6),
+                Text('Tips',
+                    style: gfont(AppType.bodyMd,
+                        color: hex(AppColors.onSurface),
+                        weight: FontWeight.w600,
+                        size: 12)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _tipRow('Blank mode uses the least power'),
+            _tipRow('Shorter timeouts protect OLED panels'),
+            _tipRow('Press any key to exit the screensaver'),
+          ],
+        ),
+      );
+
+  Widget _tipRow(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('  •  ',
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.outline), size: 11)),
+            Expanded(
+              child: Text(text,
+                  style: gfont(AppType.bodySm,
+                      color: hex(AppColors.outline), size: 11)),
+            ),
+          ],
+        ),
+      );
 }
