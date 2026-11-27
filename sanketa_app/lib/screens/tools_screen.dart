@@ -143,6 +143,15 @@ import 'sound_profile_screen.dart';
 import 'channel_map_screen.dart';
 import 'screen_dimmer_screen.dart';
 import 'gesture_library_screen.dart';
+import 'remote_vibrate_screen.dart';
+import 'channel_blocker_screen.dart';
+import 'tv_wallpaper_screen.dart';
+import 'quick_switch_screen.dart';
+import 'screen_annotate_screen.dart';
+import 'screen_cast_screen.dart';
+import 'button_remap_screen.dart';
+import 'tv_color_screen.dart';
+import 'app_timer_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -1150,6 +1159,71 @@ class ToolsScreen extends StatelessWidget {
                     subtitle: 'Learn gestures',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const GestureLibraryScreen()),
+                  ),
+                  // ── batch 26 ──
+                  _ToolCard(
+                    icon: Icons.vibration,
+                    title: 'Remote Vibrate',
+                    subtitle: 'Haptic patterns',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const RemoteVibrateScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.block,
+                    title: 'Channel Blocker',
+                    subtitle: 'Hide channels',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ChannelBlockerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.wallpaper,
+                    title: 'TV Wallpaper',
+                    subtitle: 'Ambient art',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvWallpaperScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.swap_horiz,
+                    title: 'Quick Switch',
+                    subtitle: 'App & input swap',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const QuickSwitchScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.edit,
+                    title: 'Screen Annotate',
+                    subtitle: 'Draw on screen',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ScreenAnnotateScreen()),
+                  ),
+                  // ── batch 27 ──
+                  _ToolCard(
+                    icon: Icons.cast,
+                    title: 'Screen Cast',
+                    subtitle: 'Mirror to TV',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const ScreenCastScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.shuffle,
+                    title: 'Button Remap',
+                    subtitle: 'Reassign buttons',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ButtonRemapScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.palette,
+                    title: 'TV Color',
+                    subtitle: 'Color controls',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const TvColorScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.timer,
+                    title: 'App Timer',
+                    subtitle: 'Usage limits',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const AppTimerScreen()),
                   ),
                 ],
               ),
