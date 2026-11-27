@@ -196,6 +196,12 @@ import 'room_light_screen.dart';
 import 'power_stats_screen.dart';
 import 'channel_filter_screen.dart';
 import 'macro_runner_screen.dart';
+// ── batch 37 imports ──
+import 'audio_mixer_screen.dart';
+import 'cinema_mode_screen.dart';
+import 'tv_standby_screen.dart';
+import 'universal_remote_screen.dart';
+import 'notification_center_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1577,6 +1583,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Run macros',
                     color: AppColors.tertiary,
                     onTap: () => _push(context, const MacroRunnerScreen()),
+                  ),
+                  // ── batch 37 ──
+                  _ToolCard(
+                    icon: Icons.tune,
+                    title: 'Audio Mixer',
+                    subtitle: 'Mix channels',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const AudioMixerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.movie_filter,
+                    title: 'Cinema Mode',
+                    subtitle: 'Immersive view',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const CinemaModeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bedtime,
+                    title: 'TV Standby',
+                    subtitle: 'Standby timer',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const TvStandbyScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.settings_remote,
+                    title: 'Universal Remote',
+                    subtitle: 'Multi-device',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const UniversalRemoteScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.notifications_active,
+                    title: 'Notifications',
+                    subtitle: 'TV alerts',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const NotificationCenterScreen()),
                   ),
   ];
 
