@@ -180,6 +180,11 @@ import 'tv_karaoke_screen.dart';
 import 'remote_compass_screen.dart';
 import 'app_usage_chart_screen.dart';
 import 'quick_translate_screen.dart';
+import 'tv_health_check_screen.dart';
+import 'remote_scheduler_screen.dart';
+import 'sound_zones_screen.dart';
+import 'screen_split_screen.dart';
+import 'content_filter_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1453,6 +1458,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Translate & send',
                     color: AppColors.signalEmerald,
                     onTap: () => _push(context, const QuickTranslateScreen()),
+                  ),
+                  // ── batch 34 ──
+                  _ToolCard(
+                    icon: Icons.health_and_safety,
+                    title: 'TV Health Check',
+                    subtitle: 'Diagnostics',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvHealthCheckScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.schedule,
+                    title: 'Remote Scheduler',
+                    subtitle: 'Timed actions',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const RemoteSchedulerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.surround_sound,
+                    title: 'Sound Zones',
+                    subtitle: 'Multi-room audio',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const SoundZonesScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.splitscreen,
+                    title: 'Screen Split',
+                    subtitle: 'Multi-view',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const ScreenSplitScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.shield,
+                    title: 'Content Filter',
+                    subtitle: 'Rating filter',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const ContentFilterScreen()),
                   ),
   ];
 
