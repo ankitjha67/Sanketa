@@ -219,6 +219,11 @@ import 'input_switch_screen.dart';
 import 'voice_assistant_screen.dart';
 import 'remote_finder_screen.dart';
 import 'tv_timer_screen.dart';
+// ── batch 41 imports ──
+import 'ambient_light_screen.dart';
+import 'quick_launch_screen.dart';
+import 'tv_diagnostic_screen.dart';
+import 'auto_channel_switch_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1737,6 +1742,35 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Countdown off',
                     color: AppColors.tertiary,
                     onTap: () => _push(context, const TvTimerScreen()),
+                  ),
+                  // ── batch 41 ──
+                  _ToolCard(
+                    icon: Icons.light_mode,
+                    title: 'Ambient Light',
+                    subtitle: 'Backlight LED',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const AmbientLightScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.rocket_launch,
+                    title: 'Quick Launch',
+                    subtitle: 'App shortcuts',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const QuickLaunchScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.build_circle,
+                    title: 'TV Diagnostics',
+                    subtitle: 'Self-test',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvDiagnosticScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.swap_horiz,
+                    title: 'Auto Switch',
+                    subtitle: 'Event tuner',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const AutoChannelSwitchScreen()),
                   ),
   ];
 
