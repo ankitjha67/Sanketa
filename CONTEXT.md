@@ -50,7 +50,7 @@ One app that (a) controls **any** TV — network protocols for smart platforms, 
 
 ## 3. Current phase
 
-**Phase: Phase 2 features substantially complete.** The app is running on real hardware (3 TVs validated: Sony BRAVIA 2 II, Haier, Samsung BU8000). ATVRS keyboard typing + submit is the hero feature, fully validated. **Phase 2 WiFi→IR bridge adapters built (25 Nov 2026):** BroadLink RM (local UDP, AES-128-CBC) and SwitchBot Hub (cloud API, opt-in) — 12 adapters total. Manual IR learning built via BroadLink bridge. **OD-6 (IR DB sourcing) FULLY RESOLVED:** 10,550 codesets across 2,907 brands. **Value-add features F1–F5 UI verified on device.** **Feature roadmap added (§12):** 20 prioritised features for Phase 2–3. **v0.1.0 released on GitHub (21 Nov 2026).**
+**Phase: Phase 2 features substantially complete.** The app is running on real hardware (3 TVs validated: Sony BRAVIA 2 II, Haier, Samsung BU8000). ATVRS keyboard typing + submit is the hero feature, fully validated. **Phase 2 WiFi→IR bridge adapters built (25 Nov 2026):** BroadLink RM (local UDP, AES-128-CBC) and SwitchBot Hub (cloud API, opt-in) — 12 adapters total. Manual IR learning built via BroadLink bridge. **OD-6 (IR DB sourcing) FULLY RESOLVED:** 10,550 codesets across 2,907 brands. **Value-add features F1–F5 UI verified on device.** **Feature roadmap added (§12):** 20 prioritised features for Phase 2–3. **v0.3.2 released on GitHub (27 Nov 2026)** with a verified APK; installed on OnePlus LE2111 without launching.
 
 | Gate ahead | Requirement to pass |
 |---|---|
@@ -77,6 +77,7 @@ One app that (a) controls **any** TV — network protocols for smart platforms, 
 13. ✅ **F2 in-app player verified on device** (14 Nov 2026) — Added `video_player` + `chewie` for built-in HLS playback. Watch button opens `PlayerScreen` (Chewie/ExoPlayer, autoplay, landscape support, human-readable errors, retry). Long-press bottom sheet offers 3 options: watch in app, open in external player (url_launcher), cast to TV. Verified live stream (3ABN Kids HLS) playing in the in-app player on OnePlus LE2111.
 14. **F3 HLS ad-skip validation on TV** — Test HLS proxy ad-skip on a connected TV via cast. Requires DLNA/Cast-capable TV on same network.
 15. **F1/F4/F5 ADB-connected functional validation** — Connect phone to Android TV via ADB WiFi, then verify: debloat toggle actually disables/enables packages, TV Stats shows live CPU/memory/storage gauges, App Launcher populates grid and launches apps.
+16. ✅ **v0.3.2 GitHub release published** (27 Nov 2026) — Version code 3, 19/19 app tests passing, v2 signature verified, APK attached with SHA-256 checksum, and installed on OnePlus LE2111 without launching.
 
 ---
 
@@ -336,6 +337,7 @@ Prioritised feature ideas for Phase 2+. Each is sized relative to the existing a
 
 | Date | Change | PRD version | By |
 |---|---|---|---|
+| 27 Nov 2026 | **Released v0.3.2 on GitHub.** Bumped Android package metadata to version 0.3.2 (code 3), fixed a narrow-width overflow in the TV keyboard's Enter control, passed all 19 app tests, built with icon tree-shaking disabled for dynamic IconData, verified APK Signature Scheme v2 and SHA-256, uploaded `Sanketa-v0.3.2.apk`, and installed it on OnePlus LE2111 without launching. | v3.0 (no requirement change — release and layout fix) | Codex |
 | 09 Aug 2026 | PRD v0.1 drafted — 21 sections, 3 appendices, 9 open decisions | v0.1 | Ankit Jha |
 | 10 Aug 2026 | CONTEXT.md created; maintenance protocol established; PRD given a change-log section and companion-document reference | v0.1 (structural only, no requirement changes) | Claude |
 | 10 Aug 2026 | Build started. Repo initialised (`main`); `sanketa_core` package written with the `ControlAdapter` contract + domain models. No requirement change → PRD deliberately untouched. Discovered Dart/Flutter SDK is not installed → toolchain decision raised (§13). | v0.1 (no requirement change) | Claude |
