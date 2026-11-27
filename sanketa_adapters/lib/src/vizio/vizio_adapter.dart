@@ -6,7 +6,7 @@
 /// a PIN, the phone sends it with a pairing token request, and the TV returns an
 /// auth token used on subsequent requests.
 ///
-/// Reference: Vizio SmartCast API (reverse-engineered, widely documented).
+/// Reference: Vizio SmartCast API (community-documented).
 library;
 
 import 'dart:convert';

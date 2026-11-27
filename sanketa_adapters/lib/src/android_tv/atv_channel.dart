@@ -28,7 +28,7 @@ abstract interface class AtvChannel {
   /// Send one RemoteMessage body; the channel frames and encrypts it.
   void sendMessage(List<int> body);
 
-  /// Incoming RemoteMessage bodies, already de-framed and decrypted.
+  /// Incoming RemoteMessage bodies, already de-framed and decoded.
   Stream<Uint8List> get messages;
 }
 

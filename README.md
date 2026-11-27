@@ -17,7 +17,7 @@ media to the screen.
 - **235 tool cards** in the searchable Tools grid covering remote control, diagnostics, parental, accessibility, gaming, casting, TV management, and 200+ beyond-roadmap features
 - **17 core screens + 200+ feature screens**: Remote, Search, Cast, Tools, Devices, Settings + 45 batches of companion tools
 - **15 platform adapters**: Android TV, Samsung Tizen, LG webOS, Roku, Sony BRAVIA, Fire TV, Vizio SmartCast, DLNA, Google Cast, DIAL, BroadLink bridge, SwitchBot bridge, Panasonic Viera, Philips JointSpace, Hisense VIDAA (MQTT)
-- **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong decrypted database)
+- **10,550 IR codesets** across 2,907 brands (Flipper IRDB + Kookong database)
 - **5 value-add features (F1–F5)** built, integrated, and UI-verified on device
 - **ATVRS keyboard typing** (the hero feature) fully hardware-validated: type on phone → see it on TV → submit search
 - **Auto Channel Switch** — event-based auto-tuner for scheduled broadcasts (user-requested feature)

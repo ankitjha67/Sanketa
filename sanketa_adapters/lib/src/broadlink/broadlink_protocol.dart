@@ -1,6 +1,6 @@
 /// BroadLink RM local UDP protocol — discovery, auth, IR send, and IR learn.
 ///
-/// Implements the BroadLink LAN protocol (reverse-engineered from
+/// Implements the BroadLink LAN protocol (based on
 /// python-broadlink by mjg59). All communication is UDP on port 80 with
 /// AES-128-CBC encrypted payloads. Fully local — no cloud dependency (NFR-8).
 library;

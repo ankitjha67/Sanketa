@@ -1,7 +1,7 @@
 # Competitor Analysis: Remote ATV v6.1.0 vs Sanketa
 
 **Date:** 2026-11-26
-**Method:** APK reverse engineering (XAPK extraction, manifest decode via aapt2, Dart AOT string-pool analysis)
+**Method:** APK analysis (XAPK extraction, manifest decode via aapt2, Dart AOT string-pool analysis)
 **Package:** `tech.simha.androidtvremote` v6.1.0 (code 45), minSdk 24, targetSdk 36
 
 ---
