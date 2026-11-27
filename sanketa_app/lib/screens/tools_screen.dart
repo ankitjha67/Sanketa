@@ -162,6 +162,16 @@ import 'network_block_screen.dart';
 import 'cast_history_screen.dart';
 import 'led_control_screen.dart';
 import 'vibrate_profile_screen.dart';
+import 'smart_home_hub_screen.dart';
+import 'media_server_screen.dart';
+import 'bandwidth_monitor_screen.dart';
+import 'sleep_routine_screen.dart';
+import 'channel_preview_screen.dart';
+import 'tv_bingo_screen.dart';
+import 'eco_mode_screen.dart';
+import 'couch_buzz_screen.dart';
+import 'stream_radar_screen.dart';
+import 'watch_later_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1305,6 +1315,78 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Haptic events',
                     color: AppColors.alertAmber,
                     onTap: () => _push(context, const VibrateProfileScreen()),
+                  ),
+                  // ── batch 30 ──
+                  _ToolCard(
+                    icon: Icons.home,
+                    title: 'Smart Home Hub',
+                    subtitle: 'Device control',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const SmartHomeHubScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.dns,
+                    title: 'Media Server',
+                    subtitle: 'DLNA streaming',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const MediaServerScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.speed,
+                    title: 'Bandwidth',
+                    subtitle: 'Network monitor',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const BandwidthMonitorScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bedtime,
+                    title: 'Sleep Routine',
+                    subtitle: 'Wind-down timer',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const SleepRoutineScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.preview,
+                    title: 'Channel Preview',
+                    subtitle: 'Browse channels',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const ChannelPreviewScreen()),
+                  ),
+                  // ── batch 31 ──
+                  _ToolCard(
+                    icon: Icons.grid_on,
+                    title: 'TV Bingo',
+                    subtitle: 'Watch party game',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvBingoScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.eco,
+                    title: 'Eco Mode',
+                    subtitle: 'Energy saver',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const EcoModeScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.vibration,
+                    title: 'Couch Buzz',
+                    subtitle: 'Phone alerts',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const CouchBuzzScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.radar,
+                    title: 'Stream Radar',
+                    subtitle: 'New content',
+                    color: AppColors.tertiary,
+                    onTap: () => _push(context, const StreamRadarScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.bookmark,
+                    title: 'Watch Later',
+                    subtitle: 'Queue manager',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const WatchLaterScreen()),
                   ),
   ];
 
