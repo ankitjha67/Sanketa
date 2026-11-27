@@ -242,6 +242,12 @@ import 'tv_audio_output_screen.dart';
 import 'tv_input_manager_screen.dart';
 import 'channel_rating_screen.dart';
 import 'screen_pip_control_screen.dart';
+// ── batch 45 imports ──
+import 'tv_subtitle_sync_screen.dart';
+import 'remote_macro_record_screen.dart';
+import 'tv_network_share_screen.dart';
+import 'channel_pip_swap_screen.dart';
+import 'tv_quick_record_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -1897,6 +1903,42 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     subtitle: 'Multi-view',
                     color: AppColors.tertiary,
                     onTap: () => _push(context, const ScreenPipControlScreen()),
+                  ),
+                  // ── batch 45 ──
+                  _ToolCard(
+                    icon: Icons.subtitles,
+                    title: 'Subtitle Sync',
+                    subtitle: 'Timing & size',
+                    color: AppColors.primary,
+                    onTap: () => _push(context, const TvSubtitleSyncScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.fiber_manual_record,
+                    title: 'Macro Recorder',
+                    subtitle: 'Record & play',
+                    color: AppColors.error,
+                    onTap: () => _push(context, const RemoteMacroRecordScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.share,
+                    title: 'Network Share',
+                    subtitle: 'DLNA & SMB',
+                    color: AppColors.signalEmerald,
+                    onTap: () => _push(context, const TvNetworkShareScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.swap_horiz,
+                    title: 'PiP Swap',
+                    subtitle: 'Swap channels',
+                    color: AppColors.secondary,
+                    onTap: () => _push(context, const ChannelPipSwapScreen()),
+                  ),
+                  _ToolCard(
+                    icon: Icons.fiber_manual_record,
+                    title: 'Quick Record',
+                    subtitle: 'One-tap DVR',
+                    color: AppColors.alertAmber,
+                    onTap: () => _push(context, const TvQuickRecordScreen()),
                   ),
   ];
 
