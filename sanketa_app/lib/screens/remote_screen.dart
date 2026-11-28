@@ -71,63 +71,124 @@ class _RemoteScreenState extends State<RemoteScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 448),
-            child: SingleChildScrollView(
-              physics: _touchpadMode ? const NeverScrollableScrollPhysics() : null,
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
-              child: Column(
-                children: [
-                  const ConnectionBar(),
-                  ListenableBuilder(
-                    listenable: c.stateReadback,
-                    builder: (_, _) => HonestyBanner(
-                      label: c.stateReadback.honestyLabel,
-                      reportsState: c.stateReadback.adapterReportsState,
-                    ),
-                  ),
-                  if (c.connectionError != null) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    _ErrorBanner(
-                      message: c.connectionError!,
-                      onRetry: c.retryConnection,
-                    ),
-                  ],
-                  if (c.lastCommandError != null) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    _ErrorBanner(
-                      message: c.lastCommandError!,
-                      onDismiss: c.clearCommandError,
-                    ),
-                  ],
-                  ListenableBuilder(
-                    listenable: c.sleepTimer,
-                    builder: (_, _) => c.sleepTimer.isActive
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: AppSpacing.sm),
-                            child: _SleepTimerBadge(
-                              timer: c.sleepTimer,
-                              onTap: _showSleepTimerPicker,
+            child: _touchpadMode
+                ? Column(children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const ConnectionBar(),
+                          ListenableBuilder(
+                            listenable: c.stateReadback,
+                            builder: (_, _) => HonestyBanner(
+                              label: c.stateReadback.honestyLabel,
+                              reportsState: c.stateReadback.adapterReportsState,
                             ),
-                          )
-                        : const SizedBox.shrink(),
+                          ),
+                          if (c.connectionError != null) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            _ErrorBanner(
+                              message: c.connectionError!,
+                              onRetry: c.retryConnection,
+                            ),
+                          ],
+                          if (c.lastCommandError != null) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            _ErrorBanner(
+                              message: c.lastCommandError!,
+                              onDismiss: c.clearCommandError,
+                            ),
+                          ],
+                          ListenableBuilder(
+                            listenable: c.sleepTimer,
+                            builder: (_, _) => c.sleepTimer.isActive
+                                ? Padding(
+                                    padding:
+                                        const EdgeInsets.only(top: AppSpacing.sm),
+                                    child: _SleepTimerBadge(
+                                      timer: c.sleepTimer,
+                                      onTap: _showSleepTimerPicker,
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          _ModeToggle(
+                            touchpadMode: _touchpadMode,
+                            onChanged: (v) => setState(() => _touchpadMode = v),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+                        child: const TouchpadSurface(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
+                      child: const _SentReadout(),
+                    ),
+                  ])
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+                    child: Column(
+                      children: [
+                        const ConnectionBar(),
+                        ListenableBuilder(
+                          listenable: c.stateReadback,
+                          builder: (_, _) => HonestyBanner(
+                            label: c.stateReadback.honestyLabel,
+                            reportsState: c.stateReadback.adapterReportsState,
+                          ),
+                        ),
+                        if (c.connectionError != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          _ErrorBanner(
+                            message: c.connectionError!,
+                            onRetry: c.retryConnection,
+                          ),
+                        ],
+                        if (c.lastCommandError != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          _ErrorBanner(
+                            message: c.lastCommandError!,
+                            onDismiss: c.clearCommandError,
+                          ),
+                        ],
+                        ListenableBuilder(
+                          listenable: c.sleepTimer,
+                          builder: (_, _) => c.sleepTimer.isActive
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsets.only(top: AppSpacing.sm),
+                                  child: _SleepTimerBadge(
+                                    timer: c.sleepTimer,
+                                    onTap: _showSleepTimerPicker,
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _ModeToggle(
+                          touchpadMode: _touchpadMode,
+                          onChanged: (v) => setState(() => _touchpadMode = v),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const TvKeyboardSheet(),
+                        const SizedBox(height: AppSpacing.md),
+                        const RemotePad(),
+                        const SizedBox(height: AppSpacing.md),
+                        const _SentReadout(),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  _ModeToggle(
-                    touchpadMode: _touchpadMode,
-                    onChanged: (v) => setState(() => _touchpadMode = v),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const TvKeyboardSheet(),
-                  const SizedBox(height: AppSpacing.md),
-                  if (_touchpadMode)
-                    const TouchpadSurface()
-                  else
-                    const RemotePad(),
-                  const SizedBox(height: AppSpacing.md),
-                  const _SentReadout(),
-                ],
-              ),
-            ),
           ),
         ),
       ),

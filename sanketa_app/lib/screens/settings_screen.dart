@@ -4,6 +4,7 @@ import 'package:sanketa_design/sanketa_design.dart';
 
 import '../control/diagnostics_service.dart';
 import '../control/remote_controller.dart';
+import '../control/session_manager.dart';
 import '../theme/tokens_x.dart';
 import '../widgets/common.dart';
 
@@ -21,7 +22,7 @@ class SettingsScreen extends StatelessWidget {
     caps['Source'] = capMap.inputList;
 
     final report = await DiagnosticsService.generateReport(
-      appVersion: 'v0.1.0',
+      appVersion: 'v0.3.2',
       isConnected: c.isConnected,
       deviceName: c.deviceName.isNotEmpty ? c.deviceName : null,
       adapterId: c.adapter.id,
@@ -61,7 +62,9 @@ class SettingsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _deviceInfoCard(c),
+                        _deviceInfoCard(context, c),
+                        const SizedBox(height: AppSpacing.lg),
+                        _pairedDevicesList(context, c),
                         const SizedBox(height: AppSpacing.lg),
                         _protocolDiscovery(context, c),
                         const SizedBox(height: AppSpacing.lg),
@@ -116,7 +119,7 @@ class SettingsScreen extends StatelessWidget {
                         ]),
                         const SizedBox(height: AppSpacing.lg),
                         _settingsGroup('ABOUT', [
-                          _settingTile(Icons.info_outline, 'Sanketa v0.1.0',
+                          _settingTile(Icons.info_outline, 'Sanketa v0.3.2',
                               subtitle: 'Universal TV Remote'),
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
@@ -183,7 +186,7 @@ class SettingsScreen extends StatelessWidget {
   // Device Info Card
   // ---------------------------------------------------------------------------
 
-  Widget _deviceInfoCard(RemoteController c) {
+  Widget _deviceInfoCard(BuildContext context, RemoteController c) {
     final dev = c.selectedDevice;
     if (dev == null) {
       return _infoCard(
@@ -241,7 +244,195 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
         ],
+        const SizedBox(height: AppSpacing.sm),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            c.disconnectDevice();
+            Navigator.of(context).pop();
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: hex(AppColors.error).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(
+                  color: hex(AppColors.error).withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.link_off, size: 16, color: hex(AppColors.error)),
+                const SizedBox(width: 6),
+                Text('Disconnect',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.error),
+                        weight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Paired Devices — like WiFi saved networks
+  // ---------------------------------------------------------------------------
+
+  Widget _pairedDevicesList(BuildContext context, RemoteController c) {
+    final devices = c.pairedDevices;
+    if (devices.isEmpty) return const SizedBox.shrink();
+
+    final currentId = c.selectedDevice?.device.id;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('PAIRED DEVICES',
+            style: gfont(AppType.labelMonoSm, color: hex(AppColors.outline))),
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          decoration: panel(
+              fill: AppColors.surfaceContainerLow,
+              radius: AppRadii.md,
+              borderOpacity: 0.2),
+          child: Column(
+            children: [
+              for (var i = 0; i < devices.length; i++) ...[
+                if (i > 0)
+                  Divider(
+                      height: 1,
+                      indent: AppSpacing.md,
+                      endIndent: AppSpacing.md,
+                      color: hex(AppColors.outlineVariant)
+                          .withValues(alpha: 0.3)),
+                _pairedDeviceTile(context, c, devices[i],
+                    isCurrent: devices[i].deviceId == currentId),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _pairedDeviceTile(
+    BuildContext context,
+    RemoteController c,
+    SavedDevice device, {
+    required bool isCurrent,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      child: Row(
+        children: [
+          Icon(
+            Icons.tv,
+            size: 20,
+            color: isCurrent
+                ? hex(AppColors.signalEmerald)
+                : hex(AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(device.displayName,
+                    style: gfont(AppType.bodyMd,
+                        color: hex(AppColors.onSurface),
+                        weight: FontWeight.w500)),
+                Text(
+                    '${device.host.isNotEmpty ? device.host : 'No IP'} · ${_brandLabel(_parseBrand(device.brand))}',
+                    style: gfont(AppType.labelMonoSm,
+                        color: hex(AppColors.outline))),
+              ],
+            ),
+          ),
+          if (isCurrent)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: hex(AppColors.signalEmerald).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+              child: Text('CONNECTED',
+                  style: gfont(AppType.labelMonoSm,
+                      color: hex(AppColors.signalEmerald), size: 9)),
+            )
+          else
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                c.connectToPairedDevice(device);
+                Navigator.of(context).pop();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Text('Connect',
+                    style: gfont(AppType.bodySm,
+                        color: hex(AppColors.primaryContainer),
+                        weight: FontWeight.w600, size: 12)),
+              ),
+            ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _confirmForget(context, c, device),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.close,
+                  size: 18, color: hex(AppColors.onSurfaceVariant)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmForget(
+      BuildContext context, RemoteController c, SavedDevice device) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: hex(AppColors.surface),
+        title: Text('Forget device?',
+            style: gfont(AppType.headlineMd,
+                color: hex(AppColors.onSurface),
+                size: 16,
+                weight: FontWeight.w600)),
+        content: Text(
+            'Remove "${device.displayName}" from your paired devices. You can re-pair later.',
+            style: gfont(AppType.bodySm, color: hex(AppColors.onSurfaceVariant))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancel',
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.onSurfaceVariant))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Forget',
+                style: gfont(AppType.bodySm,
+                    color: hex(AppColors.error), weight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed == true) {
+        c.forgetPairedDevice(device.deviceId);
+      }
+    });
+  }
+
+  core.BrandFamily _parseBrand(String brand) {
+    return core.BrandFamily.values.firstWhere(
+      (b) => b.name == brand,
+      orElse: () => core.BrandFamily.other,
     );
   }
 

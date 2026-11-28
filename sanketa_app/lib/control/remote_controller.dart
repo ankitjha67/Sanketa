@@ -113,6 +113,7 @@ class RemoteController extends ChangeNotifier {
     unawaited(_initializeIrDatabase());
     sessionManager.onReconnect = (d) => selectDevice(d, clearOverride: false);
     unawaited(sessionManager.load());
+    unawaited(sessionManager.loadPairedDevices());
     unawaited(preferences.load());
     unawaited(roomService.load());
     unawaited(permissions.check());
@@ -446,6 +447,7 @@ class RemoteController extends ChangeNotifier {
       isConnected = true;
       connectionError = null;
       unawaited(sessionManager.saveDevice(d));
+      unawaited(sessionManager.addPairedDevice(d));
 
       // For BRAVIA, _atvrs provides the keyboard channel alongside SimpleIP.
       // For non-BRAVIA ATVRS adapters, the adapter's own channel handles
@@ -1435,6 +1437,36 @@ class RemoteController extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  void disconnectDevice() {
+    ++_connectionGeneration;
+    sessionManager.cancelReconnect();
+    unawaited(_adapter.disconnect().catchError((Object _) {}));
+    _atvrs = null;
+    _selectedDevice = null;
+    activeIrEntry = null;
+    isConnected = false;
+    connectionError = null;
+    lastCommandError = null;
+    deviceName = '';
+    _consecutiveFailures = 0;
+    sessionManager.markDisconnected();
+    notifyListeners();
+  }
+
+  List<SavedDevice> get pairedDevices => sessionManager.pairedDevices;
+
+  Future<void> forgetPairedDevice(String deviceId) async {
+    if (_selectedDevice?.device.id == deviceId) {
+      disconnectDevice();
+    }
+    await sessionManager.removePairedDevice(deviceId);
+    notifyListeners();
+  }
+
+  void connectToPairedDevice(SavedDevice saved) {
+    selectDevice(saved.toDiscoveredDevice());
   }
 
   void disconnectCastDevice() {

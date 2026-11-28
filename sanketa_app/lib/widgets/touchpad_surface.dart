@@ -106,48 +106,50 @@ class _TouchpadSurfaceState extends State<TouchpadSurface> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Semantics(
-            label: 'Touchpad. Swipe to navigate, tap for OK, double-tap for Back, long-press for Menu',
-            child: GestureDetector(
-            onPanStart: _onPanStart,
-            onPanUpdate: _onPanUpdate,
-            onPanEnd: _onPanEnd,
-            onTap: _onTap,
-            onDoubleTap: _onDoubleTap,
-            onLongPress: _onLongPress,
-            child: Container(
-              height: 300,
-              decoration: BoxDecoration(
-                color: hex(AppColors.surfaceContainerLowest),
-                borderRadius: BorderRadius.circular(AppRadii.lg),
-                border: Border.all(
-                    color: hex(AppColors.outlineVariant).withValues(alpha: 0.3)),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  _crosshair(),
-                  if (_delta != Offset.zero) _indicator(),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
+          Expanded(
+            child: Semantics(
+              label: 'Touchpad. Swipe to navigate, tap for OK, double-tap for Back, long-press for Menu',
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: _onPanStart,
+                onPanUpdate: _onPanUpdate,
+                onPanEnd: _onPanEnd,
+                onTap: _onTap,
+                onDoubleTap: _onDoubleTap,
+                onLongPress: _onLongPress,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: hex(AppColors.surfaceContainerLowest),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    border: Border.all(
+                        color: hex(AppColors.outlineVariant).withValues(alpha: 0.3)),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _hint('Tap = OK'),
-                            _hint('2x = Back'),
-                            _hint('Hold = Menu'),
-                          ],
-                        ),
+                      Positioned.fill(child: _crosshair()),
+                      if (_delta != Offset.zero) _indicator(),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _hint('Tap = OK'),
+                                _hint('2x = Back'),
+                                _hint('Hold = Menu'),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
           ),
         ],
       ),
@@ -155,7 +157,6 @@ class _TouchpadSurfaceState extends State<TouchpadSurface> {
   }
 
   Widget _crosshair() => CustomPaint(
-        size: const Size(300, 300),
         painter: _CrosshairPainter(hex(AppColors.outlineVariant).withValues(alpha: 0.15)),
       );
 

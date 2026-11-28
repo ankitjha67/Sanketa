@@ -456,7 +456,7 @@ class _ConnectionDoctorScreenState extends State<ConnectionDoctorScreen> {
         caps['Source'] = capMap.inputList;
 
         final report = await DiagnosticsService.generateReport(
-          appVersion: 'v0.1.0',
+          appVersion: 'v0.3.2',
           isConnected: c.isConnected,
           deviceName: c.deviceName.isNotEmpty ? c.deviceName : null,
           adapterId: c.adapter.id,

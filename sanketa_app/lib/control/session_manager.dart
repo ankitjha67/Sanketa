@@ -169,6 +169,55 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
+  // ── Paired devices list ────────────────────────────────────────
+
+  List<SavedDevice> _pairedDevices = [];
+
+  List<SavedDevice> get pairedDevices => List.unmodifiable(_pairedDevices);
+
+  Future<void> loadPairedDevices() async {
+    try {
+      final file = await _pairedFile();
+      if (!file.existsSync()) return;
+      final list = jsonDecode(await file.readAsString()) as List;
+      _pairedDevices = list
+          .cast<Map<String, dynamic>>()
+          .map(SavedDevice.fromJson)
+          .toList();
+    } on Object {
+      _pairedDevices = [];
+    }
+  }
+
+  Future<void> addPairedDevice(core.DiscoveredDevice d) async {
+    final saved = SavedDevice.fromDevice(d);
+    _pairedDevices.removeWhere((e) => e.deviceId == saved.deviceId);
+    _pairedDevices.insert(0, saved);
+    notifyListeners();
+    await _persistPairedDevices();
+  }
+
+  Future<void> removePairedDevice(String deviceId) async {
+    _pairedDevices.removeWhere((e) => e.deviceId == deviceId);
+    notifyListeners();
+    await _persistPairedDevices();
+  }
+
+  Future<void> _persistPairedDevices() async {
+    try {
+      final file = await _pairedFile();
+      await file.writeAsString(
+          jsonEncode(_pairedDevices.map((d) => d.toJson()).toList()));
+    } on Object {
+      // Best-effort.
+    }
+  }
+
+  Future<File> _pairedFile() async {
+    final dir = await getApplicationSupportDirectory();
+    return File('${dir.path}/paired_devices.json');
+  }
+
   // ── Connection state ───────────────────────────────────────────
 
   void markConnecting() => _setState(ConnectionState.connecting);
